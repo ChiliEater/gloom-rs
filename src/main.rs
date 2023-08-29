@@ -177,65 +177,15 @@ fn main() {
 
         // == // Set up your VAO around here
 
-        let model_path = String::from("./resources/torus.obj");
+        let model_path = String::from("./resources/actual_cube.obj");
         let mut parser = obj_parser::Parser::new(&model_path);
         parser.parse();
-
-        // Basic triangles
-        /* */
-        let vertices: Vec<f32> = Vec::from([
-            1.0,1.0,0.0,
-            -1.0,1.0,0.0,
-            -1.0,-1.0,0.0,
-            1.0,-1.0,0.0
-        ]);
-
-        
-        // Serpinksy traingle
-        /*0, 7, 6, 7, 5, 8, 6, 8, 3, 5, 12, 14, 3, 11, 9, 12, 1, 13, 14, 13, 4, 11, 4, 10, 9, 10,
-            2, */
-        let indices: Vec<u32> = Vec::from([
-            0,1,2,2,3,0
-        ]);
-
-        let face_vertices: Vec<f32> = Vec::from([
-            -0.290337, 0.218932, -0.000000,
-            -0.090337, 0.218932, -0.000000,
-            -0.290337, 0.418932, 0.000000,
-            0.223491, 0.418932, 0.000000,
-            0.023491, 0.218932, -0.000000,
-            0.223491, 0.218932, -0.000000,
-            -0.003635, -0.112675, 0.007155,
-            -0.145478, 0.027756, -0.005474,
-            0.137337, 0.028919, -0.001681,
-            0.228839, -0.393021, -0.000000,
-            0.000761, -0.393021, -0.000000,
-            0.228839, -0.193021, 0.000000,
-            -0.227317, -0.393021, -0.007798,
-            0.000761, -0.393021, -0.007798,
-            -0.227317, -0.193021, -0.007798,
-        ]);
-
-        let mut face_indices: Vec<u32> = Vec::from([
-            2, 3, 1,
-            5, 4, 6,
-            8, 9, 7,
-            11, 12, 10,
-            14, 15, 13,
-        ]);
-        
-        for index in &mut face_indices {
-            *index -= 1;
-        }
-
-        let task2a_vertices: Vec<f32> =
-            Vec::from([0.6, -0.8, -1.0, 0.0, 0.4, 0.0, -0.8, -0.2, 1.0]);
-        let task2a_indices: Vec<u32> = Vec::from([1, 0, 2]);
-        let cube_vertices = parser.nonhomogenous_vertices();
-        let cube_indices = parser.vertex_indices();
+        let vertices = parser.nonhomogenous_vertices();
+        let indices = parser.vertex_indices();
         let my_vao;
+
         unsafe {
-            my_vao = create_vao(&cube_vertices, &cube_indices);
+            my_vao = create_vao(&vertices, &indices);
             //my_vao = create_vao(&vertices, &indices);
             //my_vao = create_vao(&face_vertices, &face_indices);
             //my_vao = create_vao(&task2a_vertices, &task2a_indices);
@@ -253,7 +203,11 @@ fn main() {
         let simple_shader = unsafe {
             shader::ShaderBuilder::new()
                 .attach_file("./shaders/simple.vert")
-                .attach_file("./shaders/simple.frag")
+                //.attach_file("./shaders/simple.frag")
+                //.attach_file("./shaders/checkerboard.frag")
+                //.attach_file("./shaders/circle.frag")
+                //.attach_file("./shaders/sine.frag")
+                .attach_file("./shaders/spiral.frag")
                 .link()
         };
         unsafe {
@@ -340,7 +294,7 @@ fn main() {
                 gl::BindVertexArray(my_vao);
                 gl::DrawElements(
                     gl::TRIANGLES,
-                    cube_indices.len() as i32,
+                    indices.len() as i32,
                     gl::UNSIGNED_INT,
                     ptr::null(),
                 );
