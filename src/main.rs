@@ -177,7 +177,10 @@ fn main() {
 
         // == // Set up your VAO around here
 
-        let model_path = String::from("./resources/actual_cube.obj");
+        let model_path = String::from("./resources/cube.obj");
+        //let model_path = String::from("./resources/square.obj");
+        //let model_path = String::from("./resources/torus.obj");
+
         let mut parser = obj_parser::Parser::new(&model_path);
         parser.parse();
         let vertices = parser.nonhomogenous_vertices();
