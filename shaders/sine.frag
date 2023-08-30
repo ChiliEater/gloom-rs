@@ -15,7 +15,8 @@ void main()
     int positionY = 600;
     int amplitude = 100;
     float frequency = 0.01;
-    int condition = int(gl_FragCoord.y<(positionY+sin(time)*amplitude*sin(frequency*gl_FragCoord.x+time)))
+    int condition = 
+      int(gl_FragCoord.y<(positionY+sin(time)*amplitude*sin(frequency*gl_FragCoord.x+time)))
     * int(gl_FragCoord.y>(positionY+sin(time)*amplitude*sin(frequency*gl_FragCoord.x+time)-thickness)) ; 
 
     color = condition*color_1+(1-condition)*color_2;
