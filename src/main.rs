@@ -219,6 +219,7 @@ fn main() {
 
         let vertex_shaders: Vec<String> = vec![
             "./shaders/simple.vert".to_string(),
+            "./shaders/mirror.vert".to_string(),
             "./shaders/spin.vert".to_string(),
             ];
 

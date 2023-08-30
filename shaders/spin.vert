@@ -26,7 +26,7 @@ void main()
         0,0,1
     );
 
-    mat3 rotation = x_rotation;     // rotation applied to the vertices
+    mat3 rotation = y_rotation;     // rotation applied to the vertices
 
 
     gl_Position = vec4(rotation*position, 1.0f);

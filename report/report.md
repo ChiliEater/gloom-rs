@@ -131,3 +131,28 @@ void main()
 
 # Task 3a
 
+...
+
+# Task 3b
+
+...
+
+# Task 3c
+
+...
+
+# Task 3d
+
+...
+
+# Task 3e
+
+...
+
+# Task 3f
+
+...
+
+# Task 3g
+
+...
