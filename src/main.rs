@@ -238,6 +238,7 @@ fn main() {
         // Used to demonstrate keyboard handling for exercise 2.
         let mut model_changed = false;
         let mut fragment_shader_changed = false;
+        let mut vertex_shader_changed = false;
         let mut rebuild_shaders = true;
 
         // Uniform variable(s) to be used in the shader
@@ -289,6 +290,8 @@ fn main() {
             // We tried to change the fragment shader this loop.
             let mut fragment_shader_pressed = false;
 
+            let mut vertex_shader_pressed = false;
+
             // Handle keyboard input
             if let Ok(keys) = pressed_keys.lock() {
                 for key in keys.iter() {
@@ -333,6 +336,23 @@ fn main() {
                                 fragment_shader_changed = true;
                             }
                             fragment_shader_pressed = true;
+                        }
+                        VirtualKeyCode::Y => {
+                            if !vertex_shader_changed {
+                                if vertex_shader_id == 0 {
+                                    vertex_shader_id = vertex_shaders.len();
+                                }
+                                vertex_shader_id = (vertex_shader_id - 1) % vertex_shaders.len();
+                                vertex_shader_changed = true;
+                            }
+                            vertex_shader_pressed = true;
+                        }
+                        VirtualKeyCode::C => {
+                            if !vertex_shader_changed {
+                                vertex_shader_id = (vertex_shader_id + 1) % vertex_shaders.len();
+                                vertex_shader_changed = true;
+                            }
+                            vertex_shader_pressed = true;
                         }
 
                         // default handler:
