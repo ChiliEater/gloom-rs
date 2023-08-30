@@ -207,7 +207,7 @@ fn main() {
         // This snippet is not, enough to do the exercise, and will need to be modified (outside
         // of just using the correct path), but it only needs to be called once
 
-        let fragment_shader_paths: Vec<String> = vec![
+        let fragment_shaders: Vec<String> = vec![
             "./shaders/simple.frag".to_string(),
             "./shaders/checkerboard.frag".to_string(),
             "./shaders/circle.frag".to_string(),
@@ -215,7 +215,11 @@ fn main() {
             "./shaders/spiral.frag".to_string(),
         ];
 
+        let mut fragment_shader_id: usize = 0;
+
         let vertex_shaders: Vec<String> = vec!["./shaders/simple.vert".to_string()];
+
+        let mut vertex_shader_id: usize = 0;
 
         let simple_shader = unsafe {
             shader::ShaderBuilder::new()
@@ -232,9 +236,9 @@ fn main() {
         }
 
         // Used to demonstrate keyboard handling for exercise 2.
-        let mut _arbitrary_number = 0.0; // feel free to remove
         let mut model_changed = false;
-        let mut shader_changed = false;
+        let mut fragment_shader_changed = false;
+        let mut rebuild_shaders = true;
 
         // Uniform variable(s) to be used in the shader
         let mut time: f32 = 0.0;
@@ -244,6 +248,16 @@ fn main() {
         let first_frame_time = std::time::Instant::now();
         let mut previous_frame_time = first_frame_time;
         loop {
+            if rebuild_shaders {
+                unsafe {
+                    shader::ShaderBuilder::new()
+                        .attach_file(fragment_shaders[fragment_shader_id].as_str())
+                        .attach_file(vertex_shaders[vertex_shader_id].as_str())
+                        .link()
+                        .activate();
+                }
+            }
+
             // Compute time passed since the previous frame and since the start of the program
             let now = std::time::Instant::now();
             let elapsed = now.duration_since(first_frame_time).as_secs_f32();
@@ -269,8 +283,12 @@ fn main() {
                 gl::Uniform1f(1, time);
             }
 
-            let mut model_button_pressed = false;
-            let mut shader_button_pressed = false;
+            // We tried to change the model this loop.
+            let mut model_pressed = false;
+
+            // We tried to change the fragment shader this loop.
+            let mut fragment_shader_pressed = false;
+
             // Handle keyboard input
             if let Ok(keys) = pressed_keys.lock() {
                 for key in keys.iter() {
@@ -284,10 +302,11 @@ fn main() {
                                 }
                                 model_id -= 1;
                                 model_id %= models.len();
+
                                 model_changed = true;
                                 //println!("{}", model_id);
                             }
-                            model_button_pressed = true;
+                            model_pressed = true;
                         }
                         VirtualKeyCode::D => {
                             if !model_changed {
@@ -296,21 +315,37 @@ fn main() {
                                 model_changed = true;
                                 //println!("{}", model_id);
                             }
-                            model_button_pressed = true;
+                            model_pressed = true;
                         }
                         VirtualKeyCode::Q => {
-                            
+                            if !fragment_shader_changed {
+                                if fragment_shader_id == 0 {
+                                    fragment_shader_id = fragment_shaders.len();
+                                }
+                                fragment_shader_id = (fragment_shader_id - 1) % fragment_shaders.len();
+                                fragment_shader_changed = true;
+                            }
+                            fragment_shader_pressed = true;
                         }
                         VirtualKeyCode::E => {
-
+                            if !fragment_shader_changed {
+                                fragment_shader_id = (fragment_shader_id + 1) % fragment_shaders.len();
+                                fragment_shader_changed = true;
+                            }
+                            fragment_shader_pressed = true;
                         }
 
                         // default handler:
                         _ => {}
                     }
                 }
-                if !model_button_pressed {
+
+                if !model_pressed {
                     model_changed = false;
+                }
+
+                if !fragment_shader_pressed {
+                    fragment_shader_changed = false;
                 }
             }
             // Handle mouse movement. delta contains the x and y movement of the mouse since last frame in pixels
@@ -425,7 +460,7 @@ fn main() {
                         *control_flow = ControlFlow::Exit;
                     }
                     Q => {
-                        *control_flow = ControlFlow::Exit;
+                        //*control_flow = ControlFlow::Exit;
                     }
                     _ => {}
                 }
