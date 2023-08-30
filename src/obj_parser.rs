@@ -72,8 +72,7 @@ impl Face {
 // Make public fields readonly once we're allowed to use other crates
 /// Parses a standard .obj file and stores the information in a usable format.
 /// Not all attributes are currently supported. Check the console output for reports on skipped attributes.
-pub struct Parser<'a> {
-    pub model_path: &'a Path,
+pub struct Parser {
     pub vertices: Vec<Vec<f32>>,
     pub textures: Vec<Vec<f32>>,
     pub normals: Vec<Vec<f32>>,
@@ -85,10 +84,9 @@ pub struct Parser<'a> {
     pub faces: Vec<Face>,
 }
 
-impl Parser<'_> {
+impl Parser {
     pub fn new(path: &String) -> Parser {
-        Parser {
-            model_path: Path::new(path),
+        let mut parser = Parser {
             vertices: vec![],
             name: String::from("Untitled"),
             group: String::from(""),
@@ -98,7 +96,9 @@ impl Parser<'_> {
             faces: vec![],
             textures: vec![],
             normals: vec![],
-        }
+        };
+        parser.parse(path);
+        return parser;
     }
 
     /// Reads a file and returns iterator that goes through the input line by line.
@@ -113,8 +113,9 @@ impl Parser<'_> {
     }
 
     /// Parse the file specified during construction. Results are subsequently available in the instance.
-    pub fn parse(&mut self) {
-        if let Ok(lines) = Self::read_lines(self.model_path) {
+    pub fn parse(&mut self, path_string: &String) {
+        let path = Path::new(path_string);
+        if let Ok(lines) = Self::read_lines(path) {
             lines.for_each(|line| {
                 if let Ok(attribute) = line {
                     let mut attribute_parts = attribute.split(VALUE_SEPERATOR);
@@ -159,7 +160,7 @@ impl Parser<'_> {
     pub fn vertex_indices(&mut self) -> Vec<u32> {
         let mut vertices: Vec<u32> = vec![];
         for face in &mut self.faces {
-            vertices.append(&mut face.vertices);
+            vertices.append(&mut face.vertices.clone());
         }
         return vertices;
     }

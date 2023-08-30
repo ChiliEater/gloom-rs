@@ -9,5 +9,5 @@ uniform layout(location=1) float time;
 void main()
 {
     float time_dump = time; // just use `time`somewhere so that it doesn't crash
-    color = vec4(0.6f, 0.1f, 0.2f, 1.0f);
+    color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 }

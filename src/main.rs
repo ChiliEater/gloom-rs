@@ -12,9 +12,9 @@ use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
 use std::{mem, os::raw::c_void, ptr};
 
+mod obj_parser;
 mod shader;
 mod util;
-mod obj_parser;
 
 use glutin::event::{
     DeviceEvent,
@@ -176,23 +176,27 @@ fn main() {
         }
 
         // == // Set up your VAO around here
+        let model_paths: Vec<String> = vec![
+            "./resources/cube.obj".to_string(),
+            "./resources/square.obj".to_string(),
+            "./resources/torus.obj".to_string(),
+        ];
 
-        let model_path = String::from("./resources/cube.obj");
-        //let model_path = String::from("./resources/square.obj");
-        //let model_path = String::from("./resources/torus.obj");
-
-        let mut parser = obj_parser::Parser::new(&model_path);
-        parser.parse();
-        let vertices = parser.nonhomogenous_vertices();
-        let indices = parser.vertex_indices();
-        let my_vao;
-
-        unsafe {
-            my_vao = create_vao(&vertices, &indices);
-            //my_vao = create_vao(&vertices, &indices);
-            //my_vao = create_vao(&face_vertices, &face_indices);
-            //my_vao = create_vao(&task2a_vertices, &task2a_indices);
+        let mut vaos: Vec<u32> = vec![];
+        let mut models: Vec<obj_parser::Parser> = vec![];
+        for path in model_paths {
+            let mut parser = obj_parser::Parser::new(&path);
+            let vertices = parser.nonhomogenous_vertices();
+            let indices = parser.vertex_indices();
+            let vao;
+            unsafe {
+                vao = create_vao(&vertices, &indices);
+            }
+            vaos.push(vao);
+            models.push(parser);
         }
+
+        let mut model_id: usize = 0;
 
         // == // Set up your shaders here
 
@@ -203,14 +207,26 @@ fn main() {
         // This snippet is not, enough to do the exercise, and will need to be modified (outside
         // of just using the correct path), but it only needs to be called once
 
+        let fragment_shader_paths: Vec<String> = vec![
+            "./shaders/simple.frag".to_string(),
+            "./shaders/checkerboard.frag".to_string(),
+            "./shaders/circle.frag".to_string(),
+            "./shaders/sine.frag".to_string(),
+            "./shaders/spiral.frag".to_string(),
+        ];
+
+        let vertex_shaders: Vec<String> = vec![
+            "./shaders/simple.vert".to_string(),
+        ];
+
         let simple_shader = unsafe {
             shader::ShaderBuilder::new()
                 .attach_file("./shaders/simple.vert")
-                //.attach_file("./shaders/simple.frag")
-                //.attach_file("./shaders/checkerboard.frag")
-                //.attach_file("./shaders/circle.frag")
-                //.attach_file("./shaders/sine.frag")
-                .attach_file("./shaders/spiral.frag")
+                //.attach_file("")
+                //.attach_file("")
+                //.attach_file("")
+                //.attach_file("")
+                .attach_file("./shaders/simple.frag")
                 .link()
         };
         unsafe {
@@ -219,13 +235,11 @@ fn main() {
 
         // Used to demonstrate keyboard handling for exercise 2.
         let mut _arbitrary_number = 0.0; // feel free to remove
-
-
+        let mut pressed = false;
 
         // Uniform variable(s) to be used in the shader
-        let mut time: f32 = 0.0;    
-        let delta_t: f32 = 0.1;    // amount to increase the time at each iteration
-
+        let mut time: f32 = 0.0;
+        let delta_t: f32 = 0.1; // amount to increase the time at each iteration
 
         // The main rendering loop
         let first_frame_time = std::time::Instant::now();
@@ -236,8 +250,6 @@ fn main() {
             let elapsed = now.duration_since(first_frame_time).as_secs_f32();
             let delta_time = now.duration_since(previous_frame_time).as_secs_f32();
             previous_frame_time = now;
-
-            
 
             // Handle resize events
             if let Ok(mut new_size) = window_size.lock() {
@@ -252,13 +264,11 @@ fn main() {
                 }
             }
 
-             // Bind the shader and update the uniform variables
-             unsafe {
-                time += delta_t;     // Update the time value
+            // Bind the shader and update the uniform variables
+            unsafe {
+                time += delta_t; // Update the time value
                 gl::Uniform1f(1, time);
-            }  
-
-
+            }
 
             // Handle keyboard input
             if let Ok(keys) = pressed_keys.lock() {
@@ -267,9 +277,19 @@ fn main() {
                         // The `VirtualKeyCode` enum is defined here:
                         //    https://docs.rs/winit/0.25.0/winit/event/enum.VirtualKeyCode.html
                         VirtualKeyCode::A => {
+                            if model_id == 0 {
+                                model_id = models.len();
+                            }
+                            model_id -= 1;
+                            model_id %= models.len();
+                            println!("{}", model_id);
                             _arbitrary_number += delta_time;
+                            
                         }
                         VirtualKeyCode::D => {
+                            model_id += 1;
+                            model_id %= models.len();
+                            println!("{}", model_id);
                             _arbitrary_number -= delta_time;
                         }
 
@@ -292,16 +312,15 @@ fn main() {
                 // Clear the color and depth buffers
                 gl::ClearColor(0.035, 0.046, 0.078, 1.0); // night sky, full opacity
                 gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
-
+                let test = models[model_id].vertex_indices().len() as i32;
                 // == // Issue the necessary gl:: commands to draw your scene here
-                gl::BindVertexArray(my_vao);
+                gl::BindVertexArray(vaos[model_id]);
                 gl::DrawElements(
                     gl::TRIANGLES,
-                    indices.len() as i32,
+                    models[model_id].vertex_indices().len() as i32,
                     gl::UNSIGNED_INT,
                     ptr::null(),
                 );
-                
             }
 
             // Display the new color buffer on the display
