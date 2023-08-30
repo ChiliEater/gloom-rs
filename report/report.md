@@ -129,7 +129,7 @@ void main()
 }
 ```
 
-# Task 3a
+# Task 3a: Checkerboard
 
 In order to render a checkerboard pattern, we have to determine if a pixel is in an even or odd part of the pattern. We defined a `size` variable corresponding to the number of pixels in each square of the checkerboard, as well as 2 colors. The evenness of a pixel is determined using the expression below.
 
@@ -143,28 +143,60 @@ First, we check wether a pixel is in an even or odd square along the x-axis by u
 color = condition*color_1+(1-condition)*color_2;
 ```
 
-# Task 3b
-To draw a circle we need to check wether the pixels are within a given radius of a given point which is the center of the circle :
+# Task 3b: Circle
+
+To draw a circle we need to check wether the pixels are within a given radius $r$ of a given point $(c_x,c_y)$ which is the center of the circle :
+
+$$
+(x-c_x)^2+(y-c_y)^2\leq r^2
+$$
+
+This equation is then implemented in the fragment shader :
+
 ```glsl
 int condition = int((gl_FragCoord.x-centerX)*(gl_FragCoord.x-centerX)
     + (gl_FragCoord.y-centerY)*(gl_FragCoord.y-centerY) < size*size);
 ```
 
-# Task 3c
+The color can then be set using the same equation as the **Task 3a**
 
-...
+![](img/circle.png)
 
-# Task 3d
+# Task 3c: Spiral
 
-...
+magic
 
-# Task 3e
+![](img/spiral.png)
 
-Not implemented.
+# Task 3d: Color change
 
-# Task 3f
+In order to have a shape change color over time we need to use a uniform variable that is updated in the main rendering loop. To do that, we need to assign a location and a name. In the preamble of the fragment shader we add :
 
-The Wavefront .obj file format is briefl described [on Wikipedia](https://en.wikipedia.org/wiki/Wavefront_.obj_file) and fully documented [here](https://paulbourke.net/dataformats/obj/). For our current needs, only some of the most important attributes are read. The enum at [src/obj_parser.rs:15](../src/obj_parser.rs#L15) lists all implemented attributes.
+```glsl
+uniform layout(location=1) float time;
+```
+
+This uniform variable is updated in the main rendering loop by adding `delta_t` at each iteration:
+```rust
+unsafe {
+    time += delta_t;
+    gl::Uniform1f(1, time);
+    }
+```
+This value can then be used to have the color smoothly changing between two colors :
+
+```glsl
+float condition = (1.0+sin(time)) / 2.0f;
+color = condition*color_1+(1-condition)*color_2;
+```
+
+# Task 3e: Fragment abuse
+
+We weren't able to figure this one out, sorry.
+
+# Task 3f: .obj parsing
+
+The Wavefront `.obj` file format is briefly described [on Wikipedia](https://en.wikipedia.org/wiki/Wavefront_.obj_file) and fully documented [here](https://paulbourke.net/dataformats/obj/). For our current needs, only some of the most important attributes are read. The enum at [src/obj_parser.rs:15](../src/obj_parser.rs#L15) lists all implemented attributes.
 
 The parsing results are available immediately after construction. An additional type `Face` was implemented to hold data about faces. Some helper functions are available on the object to simplify usage of the data within.
 
@@ -172,6 +204,21 @@ In terms of code quality, the class is somewhat lacking due to our inexperience 
 
 ![](img/monkey.png)
 
-# Task 3g
+# Task 3g: Sine
 
-...
+The formula below demonstrates how the sine wave is calculated.
+
+$$
+\lfloor y_f < (y_\text{offset} + \sin{(t)} * A * \sin{(f * x_f + t)}) \rfloor * \\
+ \lfloor y_f > (y_\text{offset} + \sin{(t)} * A * \sin{(f * x_f + t)} - \text{thickness}) \rfloor
+$$
+
+```glsl
+int condition = 
+int(gl_FragCoord.y<(positionY+sin(time)*amplitude*sin(frequency*gl_FragCoord.x+time)))
+* int(gl_FragCoord.y>(positionY+sin(time)*amplitude*sin(frequency*gl_FragCoord.x+time)-thickness));
+```
+
+Everything below `positionY` is assumed to be the secondary color. Then, everything below `positionY - thickness` is assumed to be the primary color again. Now the amplitude is multiplied by the sine of the frequency times the x coordinate. This already results in a sine wave. By adding time to the equation, we can also make it move.
+
+![](img/sine.png)

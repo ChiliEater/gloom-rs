@@ -1,4 +1,5 @@
 #version 430 core
+#define PI 3.141592653589793238462643383279
 
 out vec4 color;
 
@@ -8,11 +9,6 @@ uniform layout(location=1) float time;
 
 void main()
 {
-    vec4 color_1 = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-    vec4 color_2 = vec4(0.972f, 0.992f, 0.007f, 1.0f);
-
-    // Color change
-    float condition = (1.0+sin(time)) / 2.0f;
-    color = condition*color_1+(1-condition)*color_2;
-    
+    float time_bis = mod(time/3.0,PI);
+    color = (1+vec4(sin(time_bis),1-cos(2.5*time_bis),pow(sin(time_bis),2),2.0f))/2.0f;
 }

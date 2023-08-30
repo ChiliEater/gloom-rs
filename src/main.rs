@@ -215,6 +215,7 @@ fn main() {
             "./shaders/circle.frag".to_string(),
             "./shaders/sine.frag".to_string(),
             "./shaders/spiral.frag".to_string(),
+            "./shaders/color_change.frag".to_string(),
         ];
 
         let mut fragment_shader_id: usize = 0;
@@ -284,9 +285,9 @@ fn main() {
                 }
             }
 
-            // Bind the shader and update the uniform variables
+            // Update the uniform variables
             unsafe {
-                time += delta_t; // Update the time value
+                time += delta_t;    // Update the time value
                 gl::Uniform1f(1, time);
             }
 
