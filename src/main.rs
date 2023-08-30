@@ -215,9 +215,7 @@ fn main() {
             "./shaders/spiral.frag".to_string(),
         ];
 
-        let vertex_shaders: Vec<String> = vec![
-            "./shaders/simple.vert".to_string(),
-        ];
+        let vertex_shaders: Vec<String> = vec!["./shaders/simple.vert".to_string()];
 
         let simple_shader = unsafe {
             shader::ShaderBuilder::new()
@@ -235,7 +233,8 @@ fn main() {
 
         // Used to demonstrate keyboard handling for exercise 2.
         let mut _arbitrary_number = 0.0; // feel free to remove
-        let mut pressed = false;
+        let mut model_changed = false;
+        let mut shader_changed = false;
 
         // Uniform variable(s) to be used in the shader
         let mut time: f32 = 0.0;
@@ -270,6 +269,8 @@ fn main() {
                 gl::Uniform1f(1, time);
             }
 
+            let mut model_button_pressed = false;
+            let mut shader_button_pressed = false;
             // Handle keyboard input
             if let Ok(keys) = pressed_keys.lock() {
                 for key in keys.iter() {
@@ -277,25 +278,39 @@ fn main() {
                         // The `VirtualKeyCode` enum is defined here:
                         //    https://docs.rs/winit/0.25.0/winit/event/enum.VirtualKeyCode.html
                         VirtualKeyCode::A => {
-                            if model_id == 0 {
-                                model_id = models.len();
+                            if !model_changed {
+                                if model_id == 0 {
+                                    model_id = models.len();
+                                }
+                                model_id -= 1;
+                                model_id %= models.len();
+                                model_changed = true;
+                                //println!("{}", model_id);
                             }
-                            model_id -= 1;
-                            model_id %= models.len();
-                            println!("{}", model_id);
-                            _arbitrary_number += delta_time;
-                            
+                            model_button_pressed = true;
                         }
                         VirtualKeyCode::D => {
-                            model_id += 1;
-                            model_id %= models.len();
-                            println!("{}", model_id);
-                            _arbitrary_number -= delta_time;
+                            if !model_changed {
+                                model_id += 1;
+                                model_id %= models.len();
+                                model_changed = true;
+                                //println!("{}", model_id);
+                            }
+                            model_button_pressed = true;
+                        }
+                        VirtualKeyCode::Q => {
+                            
+                        }
+                        VirtualKeyCode::E => {
+
                         }
 
                         // default handler:
                         _ => {}
                     }
+                }
+                if !model_button_pressed {
+                    model_changed = false;
                 }
             }
             // Handle mouse movement. delta contains the x and y movement of the mouse since last frame in pixels
