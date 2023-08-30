@@ -217,7 +217,10 @@ fn main() {
 
         let mut fragment_shader_id: usize = 0;
 
-        let vertex_shaders: Vec<String> = vec!["./shaders/simple.vert".to_string()];
+        let vertex_shaders: Vec<String> = vec![
+            "./shaders/simple.vert".to_string(),
+            "./shaders/spin.vert".to_string(),
+            ];
 
         let mut vertex_shader_id: usize = 0;
 
@@ -366,6 +369,10 @@ fn main() {
 
                 if !fragment_shader_pressed {
                     fragment_shader_changed = false;
+                }
+
+                if !vertex_shader_pressed {
+                    vertex_shader_changed = false;
                 }
             }
             // Handle mouse movement. delta contains the x and y movement of the mouse since last frame in pixels
