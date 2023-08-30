@@ -180,6 +180,8 @@ fn main() {
             "./resources/cube.obj".to_string(),
             "./resources/square.obj".to_string(),
             "./resources/torus.obj".to_string(),
+            "./resources/full_square.obj".to_string(),
+            "./resources/monkey.obj".to_string(),
         ];
 
         let mut vaos: Vec<u32> = vec![];

@@ -13,7 +13,6 @@ void main()
     vec4 color_2 = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 
     // Circle
-    int amplitude = 100*100;
     int size = 200;
     int centerX=800;
     int centerY=600;

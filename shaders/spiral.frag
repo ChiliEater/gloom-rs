@@ -19,7 +19,7 @@ void main()
     float angle = atan(uv.y, uv.x); // Angle of rotation
     float radius = length(uv);  // Radius from the center
     float spiralStart = 0.0;    // minimum radius
-    float spiralEnd = 2000.0;      // maximum radius
+    float spiralEnd = 4000.0;      // maximum radius
     float tightness = 10.0;    // Related to the number of loops (not very clear)
     float numBranches = 5.0;    // Number of branches
     float spiral = mod(numBranches*angle +  tightness * sqrt(sqrt(radius))*sin(time/20), 2.0 * 3.14159265358979323846);  // Magic

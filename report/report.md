@@ -131,11 +131,24 @@ void main()
 
 # Task 3a
 
-...
+In order to render a checkerboard pattern, we have to determine if a pixel is in an even or odd part of the pattern. We defined a `size` variable corresponding to the number of pixels in each square of the checkerboard, as well as 2 colors. The evenness of a pixel is determined using the expression below.
+
+```glsl
+int condition = int(mod(floor(gl_FragCoord.x/size),2)==mod(floor(gl_FragCoord.y/size),2));
+```
+
+First, we check wether a pixel is in an even or odd square along the x-axis by using `mod(gl_FragCoord.x/size),2)` and similarly along the y-axis. The `floor()` is added to remove the 0.5 in the coordinates since they are pixel centered. Both parts are then multiplied to get a 1 if they are even/odd and a 0 otherwise. This value can then be used to pick a color :
+
+```glsl
+color = condition*color_1+(1-condition)*color_2;
+```
 
 # Task 3b
-
-...
+To draw a circle we need to check wether the pixels are within a given radius of a given point which is the center of the circle :
+```glsl
+int condition = int((gl_FragCoord.x-centerX)*(gl_FragCoord.x-centerX)
+    + (gl_FragCoord.y-centerY)*(gl_FragCoord.y-centerY) < size*size);
+```
 
 # Task 3c
 
@@ -147,11 +160,17 @@ void main()
 
 # Task 3e
 
-...
+Not implemented.
 
 # Task 3f
 
-...
+The Wavefront .obj file format is briefl described [on Wikipedia](https://en.wikipedia.org/wiki/Wavefront_.obj_file) and fully documented [here](https://paulbourke.net/dataformats/obj/). For our current needs, only some of the most important attributes are read. The enum at [src/obj_parser.rs:15](../src/obj_parser.rs#L15) lists all implemented attributes.
+
+The parsing results are available immediately after construction. An additional type `Face` was implemented to hold data about faces. Some helper functions are available on the object to simplify usage of the data within.
+
+In terms of code quality, the class is somewhat lacking due to our inexperience in working with Rust codebases. There is some code duplication present and likely some anti-patterns as well. Nevertheless, after throwing a bunch of 3D models at the parser, it seems to hold up well. The only limitation is that we currently cannot draw anything other that triangles, so no free-form geometry. How, we've already laid the groundwork to support loading normal and texture information which will hopefully turn out to be useful soon.
+
+![](img/monkey.png)
 
 # Task 3g
 
