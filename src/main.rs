@@ -216,7 +216,8 @@ fn main() {
             "./shaders/sine.frag".to_string(),
             "./shaders/spiral.frag".to_string(),
             "./shaders/color_change.frag".to_string(),
-        ];
+            "./shaders/triangle.frag".to_string(),
+            ];
 
         let mut fragment_shader_id: usize = 0;
 
@@ -235,7 +236,7 @@ fn main() {
                 //.attach_file("")
                 //.attach_file("")
                 //.attach_file("")
-                .attach_file("./shaders/simple.frag")
+                .attach_file("./shaders/triangle.frag")
                 .link()
         };
         unsafe {
