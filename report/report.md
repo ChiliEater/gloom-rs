@@ -164,7 +164,41 @@ The color can then be set using the same equation as the **Task 3a**
 
 # Task 3c: Spiral
 
-magic
+To make a spiral, we need to define a few parameters :
+```glsl
+ int centerX = 800;
+    int centerY = 600;
+    vec2 uv = (gl_FragCoord.xy - vec2(centerX,centerY)); // Centered coordinates
+    float angle = atan(uv.y, uv.x); // Angle of rotation
+    float radius = length(uv);      // Radius from the center
+    float spiralStart = 0.0;        // minimum radius
+    float spiralEnd = 4000.0;       // maximum radius
+    float tightness = 10.0;         // Related to the number of loops
+    float numBranches = 5.0;        // Number of branches
+```
+1. `centerX` and `centerY` define the center of the spiral in screen coordinates.
+2. `uv` calculates the vector from the center of the screen to the current fragment (pixel). This centers the coordinates around the defined center.
+3. `angle` is calculated using the atan(uv.y, uv.x) function. This gives the angle between the positive x-axis and the line connecting the center to the current fragment.
+4. `radius` is calculated using the `length(uv)` function. It represents the distance from the center to the current fragment.
+5. `spiralStart` and `spiralEnd` define the range of radii where the spiral pattern will be visible.
+6. `tightness` controls the number of loops in the spiral. Larger values lead to more tightly wound spirals.
+7. `numBranches` determines the number of branches in the spiral pattern.
+   
+These variables can then be used to determine the spiral pattern using the following equation :
+$$
+\mathrm{Spiral} = (\mathrm{n_{branches}\times angle+tightness\times radius})\%[2\pi]
+$$
+The idea is that when the radius increases, the angle has to decrease in order to keep the value constant, thus creating a spiral pattern. We use a modulo $2\pi$ to render the spiral across the whole rang of possible angles. This formula is then implemented in the fragment shader :
+
+```glsl
+float spiral = mod(numBranches*angle +  tightness * sqrt(sqrt(radius)) * cos(time/20), 2.0 * 3.141592653);
+int condition = int(radius >= spiralStart && radius <= spiralEnd && spiral >= 0.0 && spiral <= 1);
+color = condition*color_1+(1-condition)*color_2;
+```
+Note that instead of simply using the radius we used $\mathrm{radius}^{1/4}$ to have a more visually pleasing spacing between the branches. We also added a time variable that makes the spiral spin and switch direction.
+
+The `condition` variable checks wether a pixel is in the radius range defined by `spiralStart` and `spiralEnd` and if the spiral equation is valid for this pixel. The thickness of the branches can be modified by changing the final boolean : `spiral<=thickness` (with a maximum of $2\pi$)
+
 
 ![](img/spiral.png)
 
