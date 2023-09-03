@@ -27,6 +27,8 @@ links-as-notes: true
 This is a HTML-style comment, not visible in the final PDF.
 -->
 
+Note: Use Q and E to change fragment shaders, A and D to change models, Y and C to change vertex shaders.
+
 # Task 1c
 
 After implementing the VAO function and correctly wiring up the shaders, we were able to produce the images below with triangles.
@@ -145,13 +147,13 @@ color = condition*color_1+(1-condition)*color_2;
 
 # Task 3b: Circle
 
-To draw a circle we need to check wether the pixels are within a given radius $r$ of a given point $(c_x,c_y)$ which is the center of the circle :
+To draw a circle we need to check wether the pixels are within a given radius $r$ of a given point $(c_x,c_y)$ which is the center of the circle:
 
 $$
 (x-c_x)^2+(y-c_y)^2\leq r^2
 $$
 
-This equation is then implemented in the fragment shader :
+This equation is then implemented in the fragment shader:
 
 ```glsl
 int condition = int((gl_FragCoord.x-centerX)*(gl_FragCoord.x-centerX)
@@ -164,7 +166,8 @@ The color can then be set using the same equation as the **Task 3a**
 
 # Task 3c: Spiral
 
-To make a spiral, we need to define a few parameters :
+To make a spiral, we need to define a few parameters:
+
 ```glsl
 int centerX = 800;
 int centerY = 600;
@@ -184,20 +187,23 @@ float numBranches = 5.0;        // Number of branches
 - `tightness` controls the number of loops in the spiral. Larger values lead to more tightly wound spirals.
 - `numBranches` determines the number of branches in the spiral pattern.
    
-These variables can then be used to determine the spiral pattern using the following equation :
+These variables can then be used to determine the spiral pattern using the following equation:
+
 $$
 \mathrm{Spiral} = (\mathrm{n_{branches}\times angle+tightness\times radius})\%[2\pi]
 $$
-The idea is that when the radius increases, the angle has to decrease in order to keep the value constant, thus creating a spiral pattern. We use a modulo $2\pi$ to render the spiral across the whole range of possible angles. This formula is then implemented in the fragment shader :
+
+The idea is that when the radius increases, the angle has to decrease in order to keep the value constant, thus creating a spiral pattern. We use a modulo $2\pi$ to render the spiral across the whole range of possible angles. This formula is then implemented in the fragment shader:
 
 ```glsl
 float spiral = mod(numBranches*angle +  tightness * sqrt(sqrt(radius)) * cos(time/20), 2.0 * 3.141592653);
 int condition = int(radius >= spiralStart && radius <= spiralEnd && spiral >= 0.0 && spiral <= 1);
 color = condition*color_1+(1-condition)*color_2;
 ```
+
 Note that instead of simply using the radius we used $\mathrm{radius}^{1/4}$ to have a more visually pleasing spacing between the branches. We also added a time variable that makes the spiral spin and switch direction.
 
-The `condition` variable checks wether a pixel is in the radius range defined by `spiralStart` and `spiralEnd` and if the spiral equation is valid for this pixel. The thickness of the branches can be modified by changing the final boolean : `spiral<=thickness` (with a maximum of $2\pi$)
+The `condition` variable checks wether a pixel is in the radius range defined by `spiralStart` and `spiralEnd` and if the spiral equation is valid for this pixel. The thickness of the branches can be modified by changing the final boolean: `spiral<=thickness` (with a maximum of $2\pi$)
 
 
 ![](img/spiral.png)
@@ -211,13 +217,14 @@ uniform layout(location=1) float time;
 ```
 
 This uniform variable is updated in the main rendering loop by adding `delta_t` at each iteration:
+
 ```rust
 unsafe {
     time += delta_t;
     gl::Uniform1f(1, time);
     }
 ```
-This value can then be used to have the color smoothly changing between two colors :
+This value can then be used to have the color smoothly changing between two colors:
 
 ```glsl
 float condition = (1.0+sin(time)) / 2.0f;
@@ -230,7 +237,7 @@ We weren't able to figure this one out, sorry.
 
 # Task 3f: .obj parsing
 
-The Wavefront `.obj` file format is briefly described [on Wikipedia](https://en.wikipedia.org/wiki/Wavefront_.obj_file) and fully documented [here](https://paulbourke.net/dataformats/obj/). For our current needs, only some of the most important attributes are read. The enum at [src/obj_parser.rs:15](../src/obj_parser.rs#L15) lists all implemented attributes.
+The Wavefront `.obj` file format is briefly described [on Wikipedia](https://en.wikipedia.org/wiki/Wavefront_.obj_file) and fully documented [here](https://paulbourke.net/dataformats/obj/). For our current needs, only some of the most important attributes are read. The enum at [src/obj_parser.rs:15](../src/obj_parser.rs) lists all implemented attributes.
 
 The parsing results are available immediately after construction. An additional type `Face` was implemented to hold data about faces. Some helper functions are available on the object to simplify usage of the data within.
 

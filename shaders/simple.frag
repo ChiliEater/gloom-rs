@@ -10,4 +10,5 @@ void main()
 {
     float time_dump = time; // just use `time`somewhere so that it doesn't crash
     color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+    
 }
