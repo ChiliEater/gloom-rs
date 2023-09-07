@@ -84,7 +84,8 @@ unsafe fn create_vao(vertices: &Vec<f32>, indices: &Vec<u32>) -> u32 {
 
     // Setup VAP (clean this up?)
     let attribute_index = 0;
-    gl::VertexAttribPointer(attribute_index, 3, gl::FLOAT, gl::FALSE, 0, ptr::null());
+    // WARNING : SIZE CHANGED TO 4 to use homogeneous coordinates. NOT SUPPORTED YET
+    gl::VertexAttribPointer(attribute_index, 4, gl::FLOAT, gl::FALSE, 0, ptr::null());
 
     // Enable VBO
     gl::EnableVertexAttribArray(attribute_index);
@@ -225,6 +226,7 @@ fn main() {
             "./shaders/simple.vert".to_string(),
             "./shaders/mirror.vert".to_string(),
             "./shaders/spin.vert".to_string(),
+            "./shaders/perspective.vert".to_string(),
             ];
 
         let mut vertex_shader_id: usize = 0;
