@@ -27,7 +27,7 @@ use glutin::event_loop::ControlFlow;
 
 // initial window size
 const INITIAL_SCREEN_W: u32 = 800;
-const INITIAL_SCREEN_H: u32 = 600;
+const INITIAL_SCREEN_H: u32 = 800;
 
 // == // Helper functions to make interacting with OpenGL a little bit prettier. You *WILL* need these! // == //
 
@@ -59,7 +59,7 @@ fn offset<T>(n: u32) -> *const c_void {
 // ptr::null()
 
 // == // Generate your VAO here
-unsafe fn create_vao(vertices: &Vec<f32>, indices: &Vec<u32>) -> u32 {
+unsafe fn create_vao(vertices: &Vec<f32>, indices: &Vec<u32>, colors: &Vec<f32>) -> u32 {
     // Generate array & store ID
     let mut vao_id: u32 = 0;
     gl::GenVertexArrays(1, &mut vao_id);
@@ -103,6 +103,22 @@ unsafe fn create_vao(vertices: &Vec<f32>, indices: &Vec<u32>) -> u32 {
         pointer_to_array(indices),
         gl::STATIC_DRAW,
     );
+
+    let mut color_id: u32 = 0;
+    gl::GenBuffers(1, &mut color_id);
+
+    gl::BindBuffer(gl::ARRAY_BUFFER, color_id);
+
+    gl::BufferData(
+        gl::ARRAY_BUFFER,
+        byte_size_of_array(colors),
+        pointer_to_array(colors),
+        gl::STATIC_DRAW,
+    );
+
+    let color_attribute = 2;
+    gl::VertexAttribPointer(color_attribute, 4, gl::FLOAT, gl::FALSE, 0, ptr::null());
+    gl::EnableVertexAttribArray(color_attribute);
 
     vao_id
 }
@@ -190,9 +206,10 @@ fn main() {
             let mut parser = obj_parser::Parser::new(&path);
             let vertices = parser.flatten_vector(parser.vertices.clone());
             let indices = parser.vertex_indices();
+            let colors = parser.flatten_vector(parser.colors.clone());
             let vao;
             unsafe {
-                vao = create_vao(&vertices, &indices);
+                vao = create_vao(&vertices, &indices, &colors);
             }
             vaos.push(vao);
             models.push(parser);
@@ -210,39 +227,26 @@ fn main() {
         // of just using the correct path), but it only needs to be called once
 
         let fragment_shaders: Vec<String> = vec![
-            "./shaders/simple.frag".to_string(),
-            "./shaders/checkerboard.frag".to_string(),
-            "./shaders/circle.frag".to_string(),
-            "./shaders/sine.frag".to_string(),
-            "./shaders/spiral.frag".to_string(),
-            "./shaders/color_change.frag".to_string(),
-            "./shaders/triangle.frag".to_string(),
+            "./shaders/fragment/simple.frag".to_string(),
+            "./shaders/fragment/checkerboard.frag".to_string(),
+            "./shaders/fragment/circle.frag".to_string(),
+            "./shaders/fragment/sine.frag".to_string(),
+            "./shaders/fragment/spiral.frag".to_string(),
+            "./shaders/fragment/color_change.frag".to_string(),
+            "./shaders/fragment/triangle.frag".to_string(),
             ];
 
         let mut fragment_shader_id: usize = 0;
 
         let vertex_shaders: Vec<String> = vec![
-            "./shaders/perspective.vert".to_string(),
-            "./shaders/simple.vert".to_string(),
-            "./shaders/mirror.vert".to_string(),
-            "./shaders/spin.vert".to_string(),
+            "./shaders/vertex/perspective.vert".to_string(),
+            "./shaders/vertex/simple.vert".to_string(),
+            "./shaders/vertex/mirror.vert".to_string(),
+            "./shaders/vertex/spin.vert".to_string(),
+            "./shaders/vertex/affine_transform.vert".to_string(),
             ];
 
         let mut vertex_shader_id: usize = 0;
-
-        let simple_shader = unsafe {
-            shader::ShaderBuilder::new()
-                .attach_file("./shaders/simple.vert")
-                //.attach_file("")
-                //.attach_file("")
-                //.attach_file("")
-                //.attach_file("")
-                .attach_file("./shaders/triangle.frag")
-                .link()
-        };
-        unsafe {
-            simple_shader.activate();
-        }
 
         // Used to demonstrate keyboard handling for exercise 2.
         let mut model_changed = false;
@@ -266,6 +270,7 @@ fn main() {
                         .link()
                         .activate();
                 }
+                rebuild_shaders = false;
             }
 
             // Compute time passed since the previous frame and since the start of the program
@@ -335,6 +340,7 @@ fn main() {
                                     fragment_shader_id = fragment_shaders.len();
                                 }
                                 fragment_shader_id = (fragment_shader_id - 1) % fragment_shaders.len();
+                                rebuild_shaders = true;
                                 fragment_shader_changed = true;
                             }
                             fragment_shader_pressed = true;
@@ -342,6 +348,7 @@ fn main() {
                         VirtualKeyCode::E => {
                             if !fragment_shader_changed {
                                 fragment_shader_id = (fragment_shader_id + 1) % fragment_shaders.len();
+                                rebuild_shaders = true;
                                 fragment_shader_changed = true;
                             }
                             fragment_shader_pressed = true;
@@ -352,6 +359,7 @@ fn main() {
                                     vertex_shader_id = vertex_shaders.len();
                                 }
                                 vertex_shader_id = (vertex_shader_id - 1) % vertex_shaders.len();
+                                rebuild_shaders = true;
                                 vertex_shader_changed = true;
                             }
                             vertex_shader_pressed = true;
@@ -360,6 +368,7 @@ fn main() {
                             if !vertex_shader_changed {
                                 vertex_shader_id = (vertex_shader_id + 1) % vertex_shaders.len();
                                 vertex_shader_changed = true;
+                                rebuild_shaders = true;
                             }
                             vertex_shader_pressed = true;
                         }

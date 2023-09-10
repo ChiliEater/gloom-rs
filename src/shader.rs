@@ -70,6 +70,7 @@ impl ShaderBuilder {
     }
 
     pub unsafe fn attach_file(self, shader_path: &str) -> ShaderBuilder {
+        //println!("{shader_path}");
         let path = Path::new(shader_path);
         if let Some(extension) = path.extension() {
             let shader_type = ShaderType::from_ext(extension)

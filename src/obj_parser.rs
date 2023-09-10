@@ -76,6 +76,7 @@ pub struct Parser {
     pub vertices: Vec<Vec<f32>>,
     pub textures: Vec<Vec<f32>>,
     pub normals: Vec<Vec<f32>>,
+    pub colors: Vec<Vec<f32>>,
     pub name: String,
     pub group: String,
     pub material: String,
@@ -96,6 +97,7 @@ impl Parser {
             faces: vec![],
             textures: vec![],
             normals: vec![],
+            colors: vec![],
         };
         parser.parse(path);
         return parser;
@@ -189,10 +191,17 @@ impl Parser {
     fn handle_vertex(&mut self, data: str::Split<&str>) {
         let mut dimensions = 0;
         let mut vertex: Vec<f32> = vec![];
+        let mut color: Vec<f32> = vec![];
         data.for_each(|coordinate| {
             let parsed_coordinate = coordinate.parse::<f32>();
             match parsed_coordinate {
-                Ok(coord) => vertex.push(coord),
+                Ok(coord) => {
+                    if dimensions < 3 {
+                        vertex.push(coord);
+                    } else {
+                        color.push(coord);
+                    }
+                }
                 Err(e) => {
                     println!("Broken vertex detected: {}", e);
                     return;
@@ -203,8 +212,19 @@ impl Parser {
 
         if dimensions == 3 {
             vertex.push(1.0);
+            color.push(1.0);
+            color.push(1.0);
+            color.push(1.0);
+            color.push(1.0);
+        } else if dimensions == 6 {
+            vertex.push(1.0);
+            color.push(1.0);
+        } else if dimensions == 7 {
+            vertex.push(1.0);
         }
+
         self.vertices.push(vertex);
+        self.colors.push(color);
     }
 
     /// Handle parsing of texture attributes.
