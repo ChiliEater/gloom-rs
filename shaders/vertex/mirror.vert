@@ -9,6 +9,7 @@ uniform layout(location=1) float time;
 
 void main()
 {
+    float time_dump = time;
     vert_color = color;
     gl_Position = vec4(position.x * -1.0f, position.y * -1.0f, position.z, position.w);
 }

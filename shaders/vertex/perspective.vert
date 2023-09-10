@@ -8,7 +8,7 @@ out vec4 vert_color;
 uniform layout(location=1) float time;
 
 void main()
-{       
+{       float time_dump = time;
         float d = -0.8;           // Distance for the perspective projection  
 
         // Perspective projection matrix

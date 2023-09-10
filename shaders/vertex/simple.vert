@@ -7,6 +7,7 @@ out vec4 vert_color;
 
 void main()
 {
+    float time_dump = time;
     vert_color = color;
     gl_Position = position;
 }

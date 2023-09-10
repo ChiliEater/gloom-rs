@@ -7,7 +7,9 @@ layout(location = 2) in vec4 color;
 out vec4 vert_color;
 
 void main()
-{   
+{   float time_dump = time;
+
+
     float a = 1;
     float b = 1*0;
     float c = 1*0;
@@ -15,18 +17,11 @@ void main()
     float e = 1;
     float f = 1*0;
 
-    /*mat4 A = mat4(
+    mat4 A = mat4(
         a, d, 0, 0,
         b, e, 0, 0,
-        0, 0, 1, sin(time*1),
-        c, f, sin(time*1), 1
-    );*/
-    
-    mat4 A = mat4(
-        1, 1, 0, 0,
-        0, 0.5, 0, 0,
         0, 0, 1, 0,
-        0, 0, 0, 1
+        c, f, 0, 1
     );
 
     vert_color = color;
