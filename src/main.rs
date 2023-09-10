@@ -84,7 +84,7 @@ unsafe fn create_vao(vertices: &Vec<f32>, indices: &Vec<u32>) -> u32 {
 
     // Setup VAP (clean this up?)
     let attribute_index = 0;
-    gl::VertexAttribPointer(attribute_index, 3, gl::FLOAT, gl::FALSE, 0, ptr::null());
+    gl::VertexAttribPointer(attribute_index, 4, gl::FLOAT, gl::FALSE, 0, ptr::null());
 
     // Enable VBO
     gl::EnableVertexAttribArray(attribute_index);
@@ -188,7 +188,7 @@ fn main() {
         let mut models: Vec<obj_parser::Parser> = vec![];
         for path in model_paths {
             let mut parser = obj_parser::Parser::new(&path);
-            let vertices = parser.nonhomogenous_vertices();
+            let vertices = parser.flatten_vector(parser.vertices.clone());
             let indices = parser.vertex_indices();
             let vao;
             unsafe {
@@ -222,6 +222,7 @@ fn main() {
         let mut fragment_shader_id: usize = 0;
 
         let vertex_shaders: Vec<String> = vec![
+            "./shaders/perspective.vert".to_string(),
             "./shaders/simple.vert".to_string(),
             "./shaders/mirror.vert".to_string(),
             "./shaders/spin.vert".to_string(),
@@ -394,7 +395,6 @@ fn main() {
                 // Clear the color and depth buffers
                 gl::ClearColor(0.035, 0.046, 0.078, 1.0); // night sky, full opacity
                 gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
-                let test = models[model_id].vertex_indices().len() as i32;
                 // == // Issue the necessary gl:: commands to draw your scene here
                 gl::BindVertexArray(vaos[model_id]);
                 gl::DrawElements(
