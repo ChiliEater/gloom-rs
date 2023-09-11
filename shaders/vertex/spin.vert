@@ -35,10 +35,21 @@ void main()
         0.0, 0.0, 0.0, 0.0
     );
 
+    
+    // ECS to NDC matrix (not sure what it's doing)
+    float n = -1.0;
+    float f = -2.0;
+    mat4 Pvt = mat4(
+        n, 0.0, 0.0, 0.0,
+        0.0, n, 0.0, 0.0,
+        0.0, 0.0, n+f, 1.0,
+        0.0, 0.0, -n*f, 0.0
+    );
+
     vec4 new_position = rotation * position;
     new_position.z -= 1.0f;
     
-    vec4 new_projection = perspective * new_position;
+    vec4 new_projection = Pvt * perspective * new_position;
 
     vert_color = color;
     gl_Position =  vec4(new_projection/new_projection.w);
