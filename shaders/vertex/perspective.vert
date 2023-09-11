@@ -2,7 +2,9 @@
 
 in vec4 position;
 layout(location = 2) in vec4 color;
+layout(location = 3) in vec3 normal;
 out vec4 vert_color;
+out vec3 vert_normal;
 
 // Uniform variables that need to be updated in the rendering loop
 uniform layout(location=1) float time;
@@ -36,5 +38,5 @@ void main()
         vec4 new_projection = Pvt * perspective * new_position;
         vert_color = color;
         gl_Position =  vec4(new_projection/new_projection.w);
-        
+        vert_normal = normal;
 }

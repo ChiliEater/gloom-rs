@@ -59,7 +59,12 @@ fn offset<T>(n: u32) -> *const c_void {
 // ptr::null()
 
 // == // Generate your VAO here
-unsafe fn create_vao(vertices: &Vec<f32>, indices: &Vec<u32>, colors: &Vec<f32>) -> u32 {
+unsafe fn create_vao(
+    vertices: &Vec<f32>,
+    indices: &Vec<u32>,
+    colors: &Vec<f32>,
+    normals: &Vec<f32>,
+) -> u32 {
     // Generate array & store ID
     let mut vao_id: u32 = 0;
     gl::GenVertexArrays(1, &mut vao_id);
@@ -106,19 +111,29 @@ unsafe fn create_vao(vertices: &Vec<f32>, indices: &Vec<u32>, colors: &Vec<f32>)
 
     let mut color_id: u32 = 0;
     gl::GenBuffers(1, &mut color_id);
-
     gl::BindBuffer(gl::ARRAY_BUFFER, color_id);
-
     gl::BufferData(
         gl::ARRAY_BUFFER,
         byte_size_of_array(colors),
         pointer_to_array(colors),
         gl::STATIC_DRAW,
     );
-
     let color_attribute = 2;
     gl::VertexAttribPointer(color_attribute, 4, gl::FLOAT, gl::FALSE, 0, ptr::null());
     gl::EnableVertexAttribArray(color_attribute);
+
+    let mut normal_id: u32 = 0;
+    gl::GenBuffers(1, &mut normal_id);
+    gl::BindBuffer(gl::ARRAY_BUFFER, normal_id);
+    gl::BufferData(
+        gl::ARRAY_BUFFER,
+        byte_size_of_array(normals),
+        pointer_to_array(normals),
+        gl::STATIC_DRAW,
+    );
+    let normal_attribute: u32 = 3;
+    gl::VertexAttribPointer(normal_attribute, 3, gl::FLOAT, gl::FALSE, 0, ptr::null());
+    gl::EnableVertexAttribArray(normal_attribute);
 
     vao_id
 }
@@ -198,6 +213,7 @@ fn main() {
             "./resources/torus.obj".to_string(),
             "./resources/full_square.obj".to_string(),
             "./resources/monkey.obj".to_string(),
+            "./resources/colored_panes.obj".to_string(),
         ];
 
         let mut vaos: Vec<u32> = vec![];
@@ -207,9 +223,10 @@ fn main() {
             let vertices = parser.flatten_vector(parser.vertices.clone());
             let indices = parser.vertex_indices();
             let colors = parser.flatten_vector(parser.colors.clone());
+            let normals = parser.decompress_normals();
             let vao;
             unsafe {
-                vao = create_vao(&vertices, &indices, &colors);
+                vao = create_vao(&vertices, &indices, &colors, &normals);
             }
             vaos.push(vao);
             models.push(parser);
@@ -234,7 +251,7 @@ fn main() {
             "./shaders/fragment/spiral.frag".to_string(),
             "./shaders/fragment/color_change.frag".to_string(),
             "./shaders/fragment/triangle.frag".to_string(),
-            ];
+        ];
 
         let mut fragment_shader_id: usize = 0;
 
@@ -244,7 +261,7 @@ fn main() {
             "./shaders/vertex/mirror.vert".to_string(),
             "./shaders/vertex/spin.vert".to_string(),
             "./shaders/vertex/affine_transform.vert".to_string(),
-            ];
+        ];
 
         let mut vertex_shader_id: usize = 0;
 
