@@ -198,6 +198,7 @@ fn main() {
             "./resources/torus.obj".to_string(),
             "./resources/full_square.obj".to_string(),
             "./resources/monkey.obj".to_string(),
+            "./resources/colored_panes.obj".to_string(),
         ];
 
         let mut vaos: Vec<u32> = vec![];
