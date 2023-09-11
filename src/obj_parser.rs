@@ -187,6 +187,24 @@ impl Parser {
         return vertices;
     }
 
+    /// Get a flat list of every normal for every index
+    /// Yes, this a bit inefficient but I couldn't find a way to use multiple indexes in OpenGL
+    pub fn decompress_normals(&mut self) -> Vec<f32> {
+        let mut normals: Vec<f32> = vec![];
+        for face in self.faces.as_slice() {
+            for normal in face.normals.as_slice() {
+                normals.extend_from_slice(
+                    self.normals
+                        .get(normal.unwrap_or(0) as usize)
+                        .unwrap_or(&vec![1.0, 1.0, 1.0])
+                        .as_slice(),
+                );
+            }
+        }
+
+        return normals;
+    }
+
     /// Handle parsing of vertex attributes.
     fn handle_vertex(&mut self, data: str::Split<&str>) {
         let mut dimensions = 0;

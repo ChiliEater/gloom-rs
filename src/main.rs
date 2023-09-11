@@ -294,7 +294,7 @@ fn main() {
 
             // Update the uniform variables
             unsafe {
-                time += delta_t;    // Update the time value
+                time += delta_t; // Update the time value
                 gl::Uniform1f(1, time);
             }
 
@@ -339,7 +339,8 @@ fn main() {
                                 if fragment_shader_id == 0 {
                                     fragment_shader_id = fragment_shaders.len();
                                 }
-                                fragment_shader_id = (fragment_shader_id - 1) % fragment_shaders.len();
+                                fragment_shader_id =
+                                    (fragment_shader_id - 1) % fragment_shaders.len();
                                 rebuild_shaders = true;
                                 fragment_shader_changed = true;
                             }
@@ -347,7 +348,8 @@ fn main() {
                         }
                         VirtualKeyCode::E => {
                             if !fragment_shader_changed {
-                                fragment_shader_id = (fragment_shader_id + 1) % fragment_shaders.len();
+                                fragment_shader_id =
+                                    (fragment_shader_id + 1) % fragment_shaders.len();
                                 rebuild_shaders = true;
                                 fragment_shader_changed = true;
                             }

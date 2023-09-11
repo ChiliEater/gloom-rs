@@ -26,7 +26,11 @@ links-as-notes: true
 
 Note: Use Q and E to change fragment shaders, A and D to change models, Y and C to change vertex shaders.
 
-# Task 1
+# Task 1b
+
+![](img/rgb-cube.png)
+
+OpenGL makes use of barycentric interpolation which, in simple terms, simply computes a weighted sum of all three color values with the distances from the fragement to the vertices being the weight. [SO](https://stackoverflow.com/questions/13210998/opengl-colour-interpolation13211355) [Wikipedia](https://en.wikipedia.org/wiki/Barycentric_coordinate_system#Barycentric_coordinates_on_triangles)
 
 # Task 2
 
