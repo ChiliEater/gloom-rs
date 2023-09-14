@@ -33,7 +33,35 @@ Note: Use Q and E to change fragment shaders, A and D to change models, Y and C 
 OpenGL makes use of barycentric interpolation which, in simple terms, simply computes a weighted sum of all three color values with the distances from the fragement to the vertices being the weight. [SO](https://stackoverflow.com/questions/13210998/opengl-colour-interpolation13211355) [Wikipedia](https://en.wikipedia.org/wiki/Barycentric_coordinate_system#Barycentric_coordinates_on_triangles)
 
 # Task 2
+In this task we will focus on 3 overlapping triangles with different colors and a given transparency. The triangles are in different $z$ planes. To see the effect of alpha blending, we need to deactivate the depth test so that all pixels are drawn :
 
+```glsl
+gl::Disable(gl::DEPTH_TEST);
+```
+
+**a)**
+
+First, we make sure that the triangles are drawn back to front. In our case, the order is **red** $\rightarrow$ **green** $\rightarrow$ **blue** as shown in the picture below :
+
+![](img/triangles_blend_back_to_front.jpg)
+
+The colors of the triangles are :
+- pure red `(1,0,0)`, 33% transparency
+- pure green `(0,1,0)`, 33% transparency
+- pure blue `(0,0,1)`, 33% transparency
+  
+The part where the triangles overlap is mostly blue, which is the color of the closest triangle (last one being drawn).
+
+**b)**
+
+Now we will swap the color of the triangles. The $z$ position and the drawing order of the triangles remains the same, only the color changes.
+  
+- **red** $\rightarrow$ **blue** $\rightarrow$ **green**
+  ![](img/triangles_RBG.png)
+  In this case, the overlapping area is mostly green
+- **green** $\rightarrow$ **blue** $\rightarrow$ **red**
+  ![](img/triangles_GBR.png)
+  In this case, the overlapping area is mostly red
 # Task 3
 For the rest of **Task 3** the transformations will be compared to the following reference image :
 

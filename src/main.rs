@@ -169,7 +169,7 @@ fn main() {
 
         // Set up openGL
         unsafe {
-            gl::Enable(gl::DEPTH_TEST);
+            gl::Disable(gl::DEPTH_TEST);
             gl::DepthFunc(gl::LESS);
             gl::Enable(gl::CULL_FACE);
             gl::Disable(gl::MULTISAMPLE);
@@ -193,12 +193,12 @@ fn main() {
 
         // == // Set up your VAO around here
         let model_paths: Vec<String> = vec![
+            "./resources/colored_panes.obj".to_string(),
             "./resources/cube.obj".to_string(),
             "./resources/square.obj".to_string(),
             "./resources/torus.obj".to_string(),
             "./resources/full_square.obj".to_string(),
             "./resources/monkey.obj".to_string(),
-            "./resources/colored_panes.obj".to_string(),
         ];
 
         let mut vaos: Vec<u32> = vec![];
@@ -405,7 +405,8 @@ fn main() {
 
             unsafe {
                 // Clear the color and depth buffers
-                gl::ClearColor(0.035, 0.046, 0.078, 1.0); // night sky, full opacity
+                //gl::ClearColor(0.035, 0.046, 0.078, 1.0); // night sky, full opacity
+                gl::ClearColor(1.0, 1.0, 1.0, 1.0); // white background, full opacity
                 gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
                 // == // Issue the necessary gl:: commands to draw your scene here
                 gl::BindVertexArray(vaos[model_id]);
