@@ -313,7 +313,7 @@ fn main() {
                     match key {
                         // The `VirtualKeyCode` enum is defined here:
                         //    https://docs.rs/winit/0.25.0/winit/event/enum.VirtualKeyCode.html
-                        VirtualKeyCode::A => {
+                        VirtualKeyCode::K => {
                             if !model_changed {
                                 if model_id == 0 {
                                     model_id = models.len();
@@ -326,7 +326,7 @@ fn main() {
                             }
                             model_pressed = true;
                         }
-                        VirtualKeyCode::D => {
+                        VirtualKeyCode::L => {
                             if !model_changed {
                                 model_id += 1;
                                 model_id %= models.len();
@@ -335,7 +335,7 @@ fn main() {
                             }
                             model_pressed = true;
                         }
-                        VirtualKeyCode::Q => {
+                        VirtualKeyCode::U => {
                             if !fragment_shader_changed {
                                 if fragment_shader_id == 0 {
                                     fragment_shader_id = fragment_shaders.len();
@@ -347,7 +347,7 @@ fn main() {
                             }
                             fragment_shader_pressed = true;
                         }
-                        VirtualKeyCode::E => {
+                        VirtualKeyCode::I => {
                             if !fragment_shader_changed {
                                 fragment_shader_id =
                                     (fragment_shader_id + 1) % fragment_shaders.len();
@@ -356,7 +356,7 @@ fn main() {
                             }
                             fragment_shader_pressed = true;
                         }
-                        VirtualKeyCode::Y => {
+                        VirtualKeyCode::O => {
                             if !vertex_shader_changed {
                                 if vertex_shader_id == 0 {
                                     vertex_shader_id = vertex_shaders.len();
@@ -367,7 +367,7 @@ fn main() {
                             }
                             vertex_shader_pressed = true;
                         }
-                        VirtualKeyCode::C => {
+                        VirtualKeyCode::P => {
                             if !vertex_shader_changed {
                                 vertex_shader_id = (vertex_shader_id + 1) % vertex_shaders.len();
                                 vertex_shader_changed = true;
