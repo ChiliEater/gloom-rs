@@ -16,6 +16,7 @@ mod obj_parser;
 mod shader;
 mod util;
 
+use glm::{pi, vec3, Mat4x4};
 use glutin::event::{
     DeviceEvent,
     ElementState::{Pressed, Released},
@@ -26,8 +27,9 @@ use glutin::event::{
 use glutin::event_loop::ControlFlow;
 
 // initial window size
-const INITIAL_SCREEN_W: u32 = 400;
-const INITIAL_SCREEN_H: u32 = 400;
+const INITIAL_SCREEN_W: u32 = 800;
+const INITIAL_SCREEN_H: u32 = 800;
+const MOVEMENT_SPEED: f32 = 2.0;
 
 // == // Helper functions to make interacting with OpenGL a little bit prettier. You *WILL* need these! // == //
 
@@ -124,6 +126,10 @@ unsafe fn create_vao(vertices: &Vec<f32>, indices: &Vec<u32>, colors: &Vec<f32>)
 }
 
 fn main() {
+    let x_axis: glm::Vec3 = glm::vec3(1.0, 0.0, 0.0);
+    let y_axis: glm::Vec3 = glm::vec3(0.0, 1.0, 0.0);
+    let z_axis: glm::Vec3 = glm::vec3(0.0, 0.0, 1.0);
+    let origin: glm::Vec3 = glm::vec3(0.0, 0.0, 0.0);
     // Set up the necessary objects to deal with windows and event handling
     let el = glutin::event_loop::EventLoop::new();
     let wb = glutin::window::WindowBuilder::new()
@@ -136,8 +142,11 @@ fn main() {
     let cb = glutin::ContextBuilder::new().with_vsync(true);
     let windowed_context = cb.build_windowed(wb, &el).unwrap();
     // Uncomment these if you want to use the mouse for controls, but want it to be confined to the screen and/or invisible.
-    //windowed_context.window().set_cursor_grab(glutin::window::CursorGrabMode::Confined).expect("failed to grab cursor");
-    //windowed_context.window().set_cursor_visible(false);
+    windowed_context
+        .window()
+        .set_cursor_grab(glutin::window::CursorGrabMode::Confined)
+        .expect("failed to grab cursor");
+    windowed_context.window().set_cursor_visible(false);
 
     // Set up a shared vector for keeping track of currently pressed keys
     let arc_pressed_keys = Arc::new(Mutex::new(Vec::<VirtualKeyCode>::with_capacity(10)));
@@ -193,8 +202,8 @@ fn main() {
 
         // == // Set up your VAO around here
         let model_paths: Vec<String> = vec![
-            "./resources/colored_panes.obj".to_string(),
             "./resources/cube.obj".to_string(),
+            "./resources/colored_panes.obj".to_string(),
             "./resources/square.obj".to_string(),
             "./resources/torus.obj".to_string(),
             "./resources/full_square.obj".to_string(),
@@ -235,7 +244,7 @@ fn main() {
             "./shaders/fragment/spiral.frag".to_string(),
             "./shaders/fragment/color_change.frag".to_string(),
             "./shaders/fragment/triangle.frag".to_string(),
-            ];
+        ];
 
         let mut fragment_shader_id: usize = 0;
 
@@ -245,7 +254,7 @@ fn main() {
             "./shaders/vertex/mirror.vert".to_string(),
             "./shaders/vertex/spin.vert".to_string(),
             "./shaders/vertex/affine_transform.vert".to_string(),
-            ];
+        ];
 
         let mut vertex_shader_id: usize = 0;
 
@@ -262,6 +271,11 @@ fn main() {
         // The main rendering loop
         let first_frame_time = std::time::Instant::now();
         let mut previous_frame_time = first_frame_time;
+
+        let mut camera_rotation: glm::Vec3 = glm::vec3(0.0, 0.0, 0.0);
+        let mut camera_position: glm::Vec3 = glm::vec3(0.0, 0.0, 0.0);
+        let mut sprint = false;
+
         loop {
             if rebuild_shaders {
                 unsafe {
@@ -308,6 +322,9 @@ fn main() {
             let mut vertex_shader_pressed = false;
 
             // Handle keyboard input
+
+            // Shader switching
+            /*
             if let Ok(keys) = pressed_keys.lock() {
                 for key in keys.iter() {
                     match key {
@@ -324,7 +341,8 @@ fn main() {
                                 model_changed = true;
                                 //println!("{}", model_id);
                             }
-                            model_pressed = true;
+                            model_pressed = true;            if let Ok()
+
                         }
                         VirtualKeyCode::L => {
                             if !model_changed {
@@ -377,7 +395,8 @@ fn main() {
                         }
 
                         // default handler:
-                        _ => {}
+                        _ => {}            if let Ok()
+
                     }
                 }
 
@@ -393,17 +412,56 @@ fn main() {
                     vertex_shader_changed = false;
                 }
             }
+            */
+            if let Ok(keys) = pressed_keys.lock() {
+                const SPRINT_MULTIPLIER: f32 = 4.0;
+                let mut delta_speed = MOVEMENT_SPEED * delta_time;
+                if keys.contains(&LShift) {
+                    delta_speed *= SPRINT_MULTIPLIER;
+                }
+                for key in keys.iter() {
+                    match key {
+                        D | Right => camera_position.x += delta_speed,
+                        A | Left => camera_position.x -= delta_speed,
+                        Space => camera_position.y += delta_speed,
+                        LControl => camera_position.y -= delta_speed,
+                        S | Down => camera_position.z += delta_speed,
+                        W | Up => camera_position.z -= delta_speed,
+                        _ => {}
+                    }
+                }
+            }
+            // Calculate transformations
+            let translation_matrix: Mat4x4 = glm::translation(&(camera_position * -1.0));
+            let perspective_matrix: Mat4x4 =
+                glm::perspective(window_aspect_ratio, 90.0, 0.25, 100.0);
+
             // Handle mouse movement. delta contains the x and y movement of the mouse since last frame in pixels
             if let Ok(mut delta) = mouse_delta.lock() {
                 // == // Optionally access the accumulated mouse movement between
                 // == // frames here with `delta.0` and `delta.1`
-
+                if let Ok(screen) = window_size.lock() {
+                    camera_rotation += vec3(
+                        delta.1 / screen.1 as f32 * pi::<f32>() * -1.0,
+                        delta.0 / screen.0 as f32 * pi::<f32>() * -1.0,
+                        0.0,
+                    );
+                }
                 *delta = (0.0, 0.0); // reset when done
             }
 
+            let rotation_matrix: Mat4x4 = glm::translation(&(origin * -1.0))
+                * glm::rotation(camera_rotation.x, &x_axis)
+                * glm::rotation(camera_rotation.y, &y_axis)
+                * glm::rotation(camera_rotation.z, &z_axis)
+                * glm::translation(&origin);
+
+            let transform_matrix: Mat4x4 =
+                perspective_matrix * translation_matrix * rotation_matrix;
             // == // Please compute camera transforms here (exercise 2 & 3)
 
             unsafe {
+                gl::UniformMatrix4fv(3, 1, gl::FALSE, transform_matrix.as_ptr());
                 // Clear the color and depth buffers
                 //gl::ClearColor(0.035, 0.046, 0.078, 1.0); // night sky, full opacity
                 gl::ClearColor(1.0, 1.0, 1.0, 1.0); // white background, full opacity
@@ -505,7 +563,7 @@ fn main() {
                         *control_flow = ControlFlow::Exit;
                     }
                     Q => {
-                        //*control_flow = ControlFlow::Exit;
+                        *control_flow = ControlFlow::Exit;
                     }
                     _ => {}
                 }

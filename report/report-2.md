@@ -37,7 +37,7 @@ In this task we will focus on 3 overlapping triangles with different colors and 
 
 #### a)
 
-First, we make sure that the triangles are drawn back to front. In our case, the order is **red** $\rightarrow$ **green** $\rightarrow$ **blue** as shown in the picture below :
+First, we make sure that the triangles are drawn back to front. In our case, the order is **red** $\rightarrow$ **green** $\rightarrow$ **blue** as shown in the picture below:
 
 ![](img/triangles_back_to_front.png)
 
@@ -48,7 +48,7 @@ The colors of the triangles are :
   
 The part where the triangles overlap is mostly blue, which is the color of the closest triangle (last one being drawn).
 
-#### b1)
+## Task 2b
 
 Now we will swap the color of the triangles. The $z$ position and the drawing order of the triangles remains the same, only the color changes.
   
@@ -87,12 +87,14 @@ Now, we will change the $z$ coordinate of the triangles without changing the col
  
 
 # Task 3
-For the rest of **Task 3** the transformations will be compared to the following reference image :
+
+For the rest of **Task 3** the transformations will be compared to the following reference image:
 
 ![](img/a1.png)
 
-#### a)
-It is possible to multiply each vertex by a matrix using the vertex shader :
+## Task 3a
+
+It is possible to multiply each vertex by a matrix using the vertex shader:
 
 ```glsl
 in vec4 position;
@@ -108,13 +110,14 @@ void main()
     gl_Position = A*position;
 }
 ```
-The output vertices give the following image :
+The output vertices give the following image:
 
 ![](img/3a-monkey.png)
 
-#### b)
+## Task 3b
 
-In this section we will study the impact of modifying one of $a,b,c,d,e,f$ in the following affine transformation matrix :
+In this section we will study the impact of modifying one of $a,b,c,d,e,f$ in the following affine transformation matrix:
+
 $$
 A = \begin{bmatrix}
 a&b&0&c\\
@@ -126,7 +129,7 @@ $$
 
 To better see the effect of changing only one variable (starting from the identity matrix), we will use a uniform variable oscillating between -1 and 1.
 
-- $a$ and $e$ impacts the scaling of the $x$ anf $y$ coordinate respectively as shown below. It should be  noted that having a negative value flips the projection plane.
+- $a$ and $e$ impacts the scaling of the $x$ anf $y$ coordinate respectively as shown below. It should be noted that having a negative value flips the projection plane.
   
 ![](img/a3.png)
 *$a$ : x scaling*
@@ -156,7 +159,8 @@ To better see the effect of changing only one variable (starting from the identi
 
 *$f$ : vertical translation*
 
-#### c)
+## Task 3c
+
 To define a rotation of the whole model, we need a rotation matrix such as $R_x$ for a rotation around the $x$ axis:
 
 $$
@@ -168,4 +172,51 @@ R_x = \begin{bmatrix}
 \end{bmatrix}
 $$
 
-In a rotation matrix, there are 4 coordinates that need to be changed at the same time, unlike in **Task 3b)** where only one value was changed. 
+In a rotation matrix, there are 4 coordinates that need to be changed at the same time, unlike in **Task 3b** where only one value was changed. 
+
+# Task 4
+
+## Task 4a
+
+Passing in a uniform matrx is pretty simple with our current setup. First, the image below shows how the RGB cube is rendered without any transformation apart from perspective transformation.
+
+![](img/rgbcube-regular.png)
+
+We add the following lines to our program:
+
+```rust
+// Calculate transformations
+let mut test_matrix: Mat4x4 = glm::rotation(glm::pi(), &glm::vec3(0.0, 1.0, 0.0));
+test_matrix = glm::translation(&glm::vec3(0.0,0.0,-2.0)) * test_matrix;
+...
+gl::UniformMatrix4fv(3, 1, gl::FALSE, test_matrix.as_ptr());
+```
+
+The following is added to the shader:
+
+```glsl
+uniform layout(location=3) mat4 transform;
+...
+vec4 new_position = position;
+```
+
+With that in place, we can see that the RGB cube is correctly rotated 180° on the y-axis.
+
+![](img/rgbcube-rotated.png)
+
+## Task 4b
+
+This task simply moves the perspective transformation into the main program loop instead of the shader. As a result, the code now looks slightly different:
+
+```rust
+let rotation_matrix: Mat4x4 = glm::rotation(glm::pi(), &glm::vec3(0.0, 1.0, 0.0));
+let translate_matrix: Mat4x4 = glm::translation(&glm::vec3(0.0,0.0,-3.0));
+let perspective_matrix: Mat4x4 = glm::perspective(window_aspect_ratio, 90.0, 1.0, 100.0);
+let transform_matrix = perspective_matrix * translate_matrix * rotation_matrix;
+...
+gl::UniformMatrix4fv(3, 1, gl::FALSE, transform_matrix.as_ptr());
+```
+
+As instructed, we make sure that the perspective is applied last.
+
+![](img/rgbcube-perspective.png)
