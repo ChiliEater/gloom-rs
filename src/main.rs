@@ -441,30 +441,28 @@ fn main() {
                 // == // Optionally access the accumulated mouse movement between
                 // == // frames here with `delta.0` and `delta.1`
                 if let Ok(screen) = window_size.lock() {
+                    const X_SENSITIVITY: f32 = 60.0;
+                    const Y_SENSITIVITY: f32 = 60.0;
                     camera_rotation += vec3(
-                        delta.1 / screen.1 as f32 * pi::<f32>() * -1.0,
-                        delta.0 / screen.0 as f32 * pi::<f32>() * -1.0,
+                        delta.1 / screen.1 as f32 * pi::<f32>() * delta_time * X_SENSITIVITY,
+                        delta.0 / screen.0 as f32 * pi::<f32>() * delta_time * Y_SENSITIVITY,
                         0.0,
                     );
                 }
                 *delta = (0.0, 0.0); // reset when done
             }
 
-            let rotation_matrix: Mat4x4 = glm::translation(&(origin * -1.0))
-                * glm::rotation(camera_rotation.x, &x_axis)
-                * glm::rotation(camera_rotation.y, &y_axis)
-                * glm::rotation(camera_rotation.z, &z_axis)
-                * glm::translation(&origin);
-
-            let transform_matrix: Mat4x4 =
-                perspective_matrix * translation_matrix * rotation_matrix;
+            let rotation_matrix: Mat4x4 = glm::rotation(camera_rotation.x, &x_axis)
+                * glm::rotation(camera_rotation.y, &y_axis);
+            let transform_matrix: Mat4x4 = perspective_matrix * translation_matrix * rotation_matrix;
             // == // Please compute camera transforms here (exercise 2 & 3)
 
             unsafe {
                 gl::UniformMatrix4fv(3, 1, gl::FALSE, transform_matrix.as_ptr());
+                //gl::UniformMatrix4fv(4, 1, gl::FALSE, rotation_matrix.as_ptr());
                 // Clear the color and depth buffers
-                //gl::ClearColor(0.035, 0.046, 0.078, 1.0); // night sky, full opacity
-                gl::ClearColor(1.0, 1.0, 1.0, 1.0); // white background, full opacity
+                gl::ClearColor(0.035, 0.046, 0.078, 1.0); // night sky, full opacity
+                //gl::ClearColor(1.0, 1.0, 1.0, 1.0); // white background, full opacity
                 gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
                 // == // Issue the necessary gl:: commands to draw your scene here
                 gl::BindVertexArray(vaos[model_id]);
