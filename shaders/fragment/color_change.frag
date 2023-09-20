@@ -2,6 +2,7 @@
 #define PI 3.141592653589793238462643383279
 
 out vec4 color;
+in vec4 vert_color;
 
 // Uniform variables that need to be updated in the rendering loop
 uniform layout(location=1) float time;

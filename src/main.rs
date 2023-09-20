@@ -27,7 +27,7 @@ use glutin::event_loop::ControlFlow;
 
 // initial window size
 const INITIAL_SCREEN_W: u32 = 800;
-const INITIAL_SCREEN_H: u32 = 600;
+const INITIAL_SCREEN_H: u32 = 800;
 
 // == // Helper functions to make interacting with OpenGL a little bit prettier. You *WILL* need these! // == //
 
@@ -59,7 +59,7 @@ fn offset<T>(n: u32) -> *const c_void {
 // ptr::null()
 
 // == // Generate your VAO here
-unsafe fn create_vao(vertices: &Vec<f32>, indices: &Vec<u32>) -> u32 {
+unsafe fn create_vao(vertices: &Vec<f32>, indices: &Vec<u32>, colors: &Vec<f32>) -> u32 {
     // Generate array & store ID
     let mut vao_id: u32 = 0;
     gl::GenVertexArrays(1, &mut vao_id);
@@ -84,7 +84,7 @@ unsafe fn create_vao(vertices: &Vec<f32>, indices: &Vec<u32>) -> u32 {
 
     // Setup VAP (clean this up?)
     let attribute_index = 0;
-    gl::VertexAttribPointer(attribute_index, 3, gl::FLOAT, gl::FALSE, 0, ptr::null());
+    gl::VertexAttribPointer(attribute_index, 4, gl::FLOAT, gl::FALSE, 0, ptr::null());
 
     // Enable VBO
     gl::EnableVertexAttribArray(attribute_index);
@@ -103,6 +103,22 @@ unsafe fn create_vao(vertices: &Vec<f32>, indices: &Vec<u32>) -> u32 {
         pointer_to_array(indices),
         gl::STATIC_DRAW,
     );
+
+    let mut color_id: u32 = 0;
+    gl::GenBuffers(1, &mut color_id);
+
+    gl::BindBuffer(gl::ARRAY_BUFFER, color_id);
+
+    gl::BufferData(
+        gl::ARRAY_BUFFER,
+        byte_size_of_array(colors),
+        pointer_to_array(colors),
+        gl::STATIC_DRAW,
+    );
+
+    let color_attribute = 2;
+    gl::VertexAttribPointer(color_attribute, 4, gl::FLOAT, gl::FALSE, 0, ptr::null());
+    gl::EnableVertexAttribArray(color_attribute);
 
     vao_id
 }
@@ -153,7 +169,7 @@ fn main() {
 
         // Set up openGL
         unsafe {
-            gl::Enable(gl::DEPTH_TEST);
+            gl::Disable(gl::DEPTH_TEST);
             gl::DepthFunc(gl::LESS);
             gl::Enable(gl::CULL_FACE);
             gl::Disable(gl::MULTISAMPLE);
@@ -177,6 +193,7 @@ fn main() {
 
         // == // Set up your VAO around here
         let model_paths: Vec<String> = vec![
+            "./resources/colored_panes.obj".to_string(),
             "./resources/cube.obj".to_string(),
             "./resources/square.obj".to_string(),
             "./resources/torus.obj".to_string(),
@@ -188,11 +205,12 @@ fn main() {
         let mut models: Vec<obj_parser::Parser> = vec![];
         for path in model_paths {
             let mut parser = obj_parser::Parser::new(&path);
-            let vertices = parser.nonhomogenous_vertices();
+            let vertices = parser.flatten_vector(parser.vertices.clone());
             let indices = parser.vertex_indices();
+            let colors = parser.flatten_vector(parser.colors.clone());
             let vao;
             unsafe {
-                vao = create_vao(&vertices, &indices);
+                vao = create_vao(&vertices, &indices, &colors);
             }
             vaos.push(vao);
             models.push(parser);
@@ -210,38 +228,26 @@ fn main() {
         // of just using the correct path), but it only needs to be called once
 
         let fragment_shaders: Vec<String> = vec![
-            "./shaders/simple.frag".to_string(),
-            "./shaders/checkerboard.frag".to_string(),
-            "./shaders/circle.frag".to_string(),
-            "./shaders/sine.frag".to_string(),
-            "./shaders/spiral.frag".to_string(),
-            "./shaders/color_change.frag".to_string(),
-            "./shaders/triangle.frag".to_string(),
+            "./shaders/fragment/simple.frag".to_string(),
+            "./shaders/fragment/checkerboard.frag".to_string(),
+            "./shaders/fragment/circle.frag".to_string(),
+            "./shaders/fragment/sine.frag".to_string(),
+            "./shaders/fragment/spiral.frag".to_string(),
+            "./shaders/fragment/color_change.frag".to_string(),
+            "./shaders/fragment/triangle.frag".to_string(),
             ];
 
         let mut fragment_shader_id: usize = 0;
 
         let vertex_shaders: Vec<String> = vec![
-            "./shaders/simple.vert".to_string(),
-            "./shaders/mirror.vert".to_string(),
-            "./shaders/spin.vert".to_string(),
+            "./shaders/vertex/perspective.vert".to_string(),
+            "./shaders/vertex/simple.vert".to_string(),
+            "./shaders/vertex/mirror.vert".to_string(),
+            "./shaders/vertex/spin.vert".to_string(),
+            "./shaders/vertex/affine_transform.vert".to_string(),
             ];
 
         let mut vertex_shader_id: usize = 0;
-
-        let simple_shader = unsafe {
-            shader::ShaderBuilder::new()
-                .attach_file("./shaders/simple.vert")
-                //.attach_file("")
-                //.attach_file("")
-                //.attach_file("")
-                //.attach_file("")
-                .attach_file("./shaders/triangle.frag")
-                .link()
-        };
-        unsafe {
-            simple_shader.activate();
-        }
 
         // Used to demonstrate keyboard handling for exercise 2.
         let mut model_changed = false;
@@ -265,6 +271,7 @@ fn main() {
                         .link()
                         .activate();
                 }
+                rebuild_shaders = false;
             }
 
             // Compute time passed since the previous frame and since the start of the program
@@ -288,7 +295,7 @@ fn main() {
 
             // Update the uniform variables
             unsafe {
-                time += delta_t;    // Update the time value
+                time += delta_t; // Update the time value
                 gl::Uniform1f(1, time);
             }
 
@@ -333,14 +340,18 @@ fn main() {
                                 if fragment_shader_id == 0 {
                                     fragment_shader_id = fragment_shaders.len();
                                 }
-                                fragment_shader_id = (fragment_shader_id - 1) % fragment_shaders.len();
+                                fragment_shader_id =
+                                    (fragment_shader_id - 1) % fragment_shaders.len();
+                                rebuild_shaders = true;
                                 fragment_shader_changed = true;
                             }
                             fragment_shader_pressed = true;
                         }
                         VirtualKeyCode::E => {
                             if !fragment_shader_changed {
-                                fragment_shader_id = (fragment_shader_id + 1) % fragment_shaders.len();
+                                fragment_shader_id =
+                                    (fragment_shader_id + 1) % fragment_shaders.len();
+                                rebuild_shaders = true;
                                 fragment_shader_changed = true;
                             }
                             fragment_shader_pressed = true;
@@ -351,6 +362,7 @@ fn main() {
                                     vertex_shader_id = vertex_shaders.len();
                                 }
                                 vertex_shader_id = (vertex_shader_id - 1) % vertex_shaders.len();
+                                rebuild_shaders = true;
                                 vertex_shader_changed = true;
                             }
                             vertex_shader_pressed = true;
@@ -359,6 +371,7 @@ fn main() {
                             if !vertex_shader_changed {
                                 vertex_shader_id = (vertex_shader_id + 1) % vertex_shaders.len();
                                 vertex_shader_changed = true;
+                                rebuild_shaders = true;
                             }
                             vertex_shader_pressed = true;
                         }
@@ -392,9 +405,9 @@ fn main() {
 
             unsafe {
                 // Clear the color and depth buffers
-                gl::ClearColor(0.035, 0.046, 0.078, 1.0); // night sky, full opacity
+                //gl::ClearColor(0.035, 0.046, 0.078, 1.0); // night sky, full opacity
+                gl::ClearColor(1.0, 1.0, 1.0, 1.0); // white background, full opacity
                 gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
-                let test = models[model_id].vertex_indices().len() as i32;
                 // == // Issue the necessary gl:: commands to draw your scene here
                 gl::BindVertexArray(vaos[model_id]);
                 gl::DrawElements(

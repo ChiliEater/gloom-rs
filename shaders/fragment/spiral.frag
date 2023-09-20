@@ -1,6 +1,7 @@
 #version 430 core
 
 out vec4 color;
+in vec4 vert_color;
 
 // Uniform variables that need to be updated in the rendering loop
 uniform layout(location=1) float time;
