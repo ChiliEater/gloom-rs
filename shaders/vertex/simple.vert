@@ -1,7 +1,7 @@
 #version 430 core
 
 in vec4 position;
-layout(location = 2) in vec4 color;
+in layout(location = 2) vec4 color;
 out vec4 vert_color;
 
 // Uniform variables that need to be updated in the rendering loop
@@ -10,24 +10,9 @@ uniform layout(location=3) mat4 transform;
 
 void main()
 {       float time_dump = time;
-        /*
-        mat4 to_zero = mat4(
-            1.0, 0.0, 0.0, 0.0,
-            0.0, 1.0, 0.0, 0.0,
-            0.0, 0.0, 1.0, 0.0,
-            -0.0, -0.0, -0.0, 1.0
-        );
-        mat4 to_origin = mat4(
-            1.0, 0.0, 0.0, 0.0,
-            0.0, 1.0, 0.0, 0.0,
-            0.0, 0.0, 1.0, 0.0,
-            0.0, 0.0, 0.0, 1.0
-        );
-        */
-        vec4 new_position = transform * position;
-        //new_position.z -= 1.0f;
         
-
+        vec4 new_position = transform * position;
+        
         vert_color = color;
         gl_Position =  new_position;
 }
