@@ -220,3 +220,9 @@ gl::UniformMatrix4fv(3, 1, gl::FALSE, transform_matrix.as_ptr());
 As instructed, we make sure that the perspective is applied last.
 
 ![](img/rgbcube-perspective.png)
+
+## Task 4c: Keybinds
+
+Movement: WASD/IJKL
+Up/Down: Space/LCtrl
+Camera: Mouse/Arrow keys
