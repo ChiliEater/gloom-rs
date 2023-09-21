@@ -9,5 +9,7 @@ void main()
 {
     float time_dump = time;
     vert_color = color;
-    gl_Position = position;
+    float scale = 0.5;
+    vec4 new_position = vec4(position.x*scale,position.y*scale,position.z*scale,position.w);
+    gl_Position = new_position;
 }

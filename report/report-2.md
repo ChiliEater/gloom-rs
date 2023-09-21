@@ -33,17 +33,13 @@ Note: Use Q and E to change fragment shaders, A and D to change models, Y and C 
 OpenGL makes use of barycentric interpolation which, in simple terms, simply computes a weighted sum of all three color values with the distances from the fragement to the vertices being the weight. [SO](https://stackoverflow.com/questions/13210998/opengl-colour-interpolation13211355) [Wikipedia](https://en.wikipedia.org/wiki/Barycentric_coordinate_system#Barycentric_coordinates_on_triangles)
 
 # Task 2
-In this task we will focus on 3 overlapping triangles with different colors and a given transparency. The triangles are in different $z$ planes. To see the effect of alpha blending, we need to deactivate the depth test so that all pixels are drawn :
-
-```glsl
-gl::Disable(gl::DEPTH_TEST);
-```
+In this task we will focus on 3 overlapping triangles with different colors and a given transparency. The triangles are in different $z$ planes. 
 
 **a)**
 
 First, we make sure that the triangles are drawn back to front. In our case, the order is **red** $\rightarrow$ **green** $\rightarrow$ **blue** as shown in the picture below :
 
-![](img/triangles_blend_back_to_front.jpg)
+![](img/triangles_back_to_front.png)
 
 The colors of the triangles are :
 - pure red `(1,0,0)`, 33% transparency
@@ -52,7 +48,7 @@ The colors of the triangles are :
   
 The part where the triangles overlap is mostly blue, which is the color of the closest triangle (last one being drawn).
 
-**b)**
+**b1)**
 
 Now we will swap the color of the triangles. The $z$ position and the drawing order of the triangles remains the same, only the color changes.
   
@@ -62,6 +58,24 @@ Now we will swap the color of the triangles. The $z$ position and the drawing or
 - **green** $\rightarrow$ **blue** $\rightarrow$ **red**
   ![](img/triangles_GBR.png)
   In this case, the overlapping area is mostly red
+
+These are expected resultes considering how OpenGL computes the color with alpha blending :
+
+$$\mathrm{Color_{new}}=\alpha_\mathrm{source}\times \mathrm{Color_{source}} + (1-\alpha_\mathrm{source})\times \mathrm{Color_{destination}}$$
+
+Here, we have the source alpha set to 33% so, on a pure white background, the color of a triangle will be white + some color which is why the triangle look very light.
+
+In the places where they overlap, the destination color is the mix of white and color mentionned above, which will be added to the new source color. For example, in the area where red and blue overlap in the last image, there is a pure blue with 33% transparency added to a light green area which results in a cyan-blue color.
+
+**b2)**
+
+Now, we will change the $z$ coordinate of the triangles without changing the color. The reference order is the one in **Task 2a** (back to front : red $\rightarrow$ green $\rightarrow$ blue)
+
+- **back** $\rightarrow$ **front** $\rightarrow$ **middle**
+  
+- **middle** $\rightarrow$ **front** $\rightarrow$ **back**
+## Issue : 2 vertices of blue triangle are completely hidden so it does not render. Need to tweak it a little i think
+
 # Task 3
 For the rest of **Task 3** the transformations will be compared to the following reference image :
 

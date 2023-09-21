@@ -26,8 +26,8 @@ use glutin::event::{
 use glutin::event_loop::ControlFlow;
 
 // initial window size
-const INITIAL_SCREEN_W: u32 = 800;
-const INITIAL_SCREEN_H: u32 = 800;
+const INITIAL_SCREEN_W: u32 = 400;
+const INITIAL_SCREEN_H: u32 = 400;
 
 // == // Helper functions to make interacting with OpenGL a little bit prettier. You *WILL* need these! // == //
 
@@ -169,7 +169,7 @@ fn main() {
 
         // Set up openGL
         unsafe {
-            gl::Disable(gl::DEPTH_TEST);
+            gl::Enable(gl::DEPTH_TEST);
             gl::DepthFunc(gl::LESS);
             gl::Enable(gl::CULL_FACE);
             gl::Disable(gl::MULTISAMPLE);
@@ -240,8 +240,8 @@ fn main() {
         let mut fragment_shader_id: usize = 0;
 
         let vertex_shaders: Vec<String> = vec![
-            "./shaders/vertex/perspective.vert".to_string(),
             "./shaders/vertex/simple.vert".to_string(),
+            "./shaders/vertex/perspective.vert".to_string(),
             "./shaders/vertex/mirror.vert".to_string(),
             "./shaders/vertex/spin.vert".to_string(),
             "./shaders/vertex/affine_transform.vert".to_string(),
