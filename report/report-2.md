@@ -35,7 +35,7 @@ OpenGL makes use of barycentric interpolation which, in simple terms, simply com
 # Task 2
 In this task we will focus on 3 overlapping triangles with different colors and a given transparency. The triangles are in different $z$ planes. 
 
-**a)**
+#### a)
 
 First, we make sure that the triangles are drawn back to front. In our case, the order is **red** $\rightarrow$ **green** $\rightarrow$ **blue** as shown in the picture below :
 
@@ -48,7 +48,7 @@ The colors of the triangles are :
   
 The part where the triangles overlap is mostly blue, which is the color of the closest triangle (last one being drawn).
 
-**b1)**
+#### b1)
 
 Now we will swap the color of the triangles. The $z$ position and the drawing order of the triangles remains the same, only the color changes.
   
@@ -67,14 +67,24 @@ Here, we have the source alpha set to 33% so, on a pure white background, the co
 
 In the places where they overlap, the destination color is the mix of white and color mentionned above, which will be added to the new source color. For example, in the area where red and blue overlap in the last image, there is a pure blue with 33% transparency added to a light green area which results in a cyan-blue color.
 
-**b2)**
+#### b2)
 
-Now, we will change the $z$ coordinate of the triangles without changing the color. The reference order is the one in **Task 2a** (back to front : red $\rightarrow$ green $\rightarrow$ blue)
+Now, we will change the $z$ coordinate of the triangles without changing the color or the order that they are being drawn.
 
-- **back** $\rightarrow$ **front** $\rightarrow$ **middle**
+- <span style="color:red"> **back**</span> $\rightarrow$ <span style="color:green"> **front**</span> $\rightarrow$ <span style="color:blue"> **middle**</span>
+  ![](img/triangles_back_front_middle.png)
   
-- **middle** $\rightarrow$ **front** $\rightarrow$ **back**
-## Issue : 2 vertices of blue triangle are completely hidden so it does not render. Need to tweak it a little i think
+  Here, the green triangle is drawn before the blue one. The depth buffer detects that the green triangle is closer to the camera and does not render the part of the blue triangle that is behind it.
+  
+  It still renders the red triangle because it has been drawn before so the depth test is not executed on this one.
+
+- <span style="color:red"> **front**</span> $\rightarrow$ <span style="color:green"> **back**</span> $\rightarrow$ <span style="color:blue"> **middle**</span>
+  ![](img/triangles_front_back_middle.png)
+  
+  Here the red triangle is drawn first and positionned the closest to the camera so anything that is behind it is not rendered thanks to the depth buffer.
+
+  The green triangle is positionned in the back so it does not affect the blue one that is closer but drawn after.
+ 
 
 # Task 3
 For the rest of **Task 3** the transformations will be compared to the following reference image :
