@@ -418,11 +418,11 @@ fn main() {
 
             // Handle mouse movement. delta contains the x and y movement of the mouse since last frame in pixels
             if let Ok(mut delta) = mouse_delta.lock() {
+                const X_SENSITIVITY: f32 = 60.0;
+                const Y_SENSITIVITY: f32 = 60.0;
                 // == // Optionally access the accumulated mouse movement between
                 // == // frames here with `delta.0` and `delta.1`
                 if let Ok(screen) = window_size.lock() {
-                    const X_SENSITIVITY: f32 = 60.0;
-                    const Y_SENSITIVITY: f32 = 60.0;
                     camera_rotation += vec3(
                         delta.1 / screen.1 as f32 * pi::<f32>() * delta_time * X_SENSITIVITY,
                         delta.0 / screen.0 as f32 * pi::<f32>() * delta_time * Y_SENSITIVITY,
@@ -432,8 +432,14 @@ fn main() {
                 *delta = (0.0, 0.0); // reset when done
             }
 
-            camera_rotation.x = (glm::max(&glm::min(&camera_rotation, glm::half_pi()), -glm::half_pi::<f32>())).x;
-            
+            camera_rotation.x = (glm::max(
+                &glm::min(&camera_rotation, glm::half_pi()),
+                -glm::half_pi::<f32>(),
+            ))
+            .x;
+
+            camera_rotation.y %= glm::two_pi::<f32>();
+
             let rotation_matrix: Mat4x4 = glm::rotation(camera_rotation.x, &x_axis)
                 * glm::rotation(camera_rotation.y, &y_axis);
 
@@ -446,14 +452,36 @@ fn main() {
                 if keys.contains(&LShift) {
                     delta_speed *= SPRINT_MULTIPLIER;
                 }
+                const X_SENSITIVITY: f32 = 7.0;
+                const Y_SENSITIVITY: f32 = 7.0;
                 for key in keys.iter() {
                     match key {
-                        D | L => camera_position += (inverse_rotation_matrix * (x_axis.to_homogeneous() * delta_speed)).xyz(),
-                        A | J => camera_position -= (inverse_rotation_matrix * (x_axis.to_homogeneous() * delta_speed)).xyz(),
+                        D | L => {
+                            camera_position += (inverse_rotation_matrix
+                                * (x_axis.to_homogeneous() * delta_speed))
+                                .xyz()
+                        }
+                        A | J => {
+                            camera_position -= (inverse_rotation_matrix
+                                * (x_axis.to_homogeneous() * delta_speed))
+                                .xyz()
+                        }
                         Space => camera_position += y_axis * delta_speed,
                         LControl => camera_position -= y_axis * delta_speed,
-                        S | K => camera_position += (inverse_rotation_matrix * (z_axis.to_homogeneous() * delta_speed)).xyz(),
-                        W | I => camera_position -= (inverse_rotation_matrix * (z_axis.to_homogeneous() * delta_speed)).xyz(),
+                        S | K => {
+                            camera_position += (inverse_rotation_matrix
+                                * (z_axis.to_homogeneous() * delta_speed))
+                                .xyz()
+                        }
+                        W | I => {
+                            camera_position -= (inverse_rotation_matrix
+                                * (z_axis.to_homogeneous() * delta_speed))
+                                .xyz()
+                        }
+                        Left => camera_rotation.y -= Y_SENSITIVITY * delta_time,
+                        Right => camera_rotation.y += Y_SENSITIVITY * delta_time,
+                        Up => camera_rotation.x -= X_SENSITIVITY * delta_time,
+                        Down => camera_rotation.x += X_SENSITIVITY * delta_time,
                         _ => {}
                     }
                 }
@@ -461,7 +489,8 @@ fn main() {
             // Calculate transformations
             let translation_matrix: Mat4x4 = glm::translation(&(camera_position * -1.0));
 
-            let transform_matrix: Mat4x4 = perspective_matrix * rotation_matrix * translation_matrix;
+            let transform_matrix: Mat4x4 =
+                perspective_matrix * rotation_matrix * translation_matrix;
             // == // Please compute camera transforms here (exercise 2 & 3)
 
             unsafe {
@@ -469,7 +498,7 @@ fn main() {
                 //gl::UniformMatrix4fv(4, 1, gl::FALSE, rotation_matrix.as_ptr());
                 // Clear the color and depth buffers
                 gl::ClearColor(0.035, 0.046, 0.078, 1.0); // night sky, full opacity
-                //gl::ClearColor(1.0, 1.0, 1.0, 1.0); // white background, full opacity
+                                                          //gl::ClearColor(1.0, 1.0, 1.0, 1.0); // white background, full opacity
                 gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
                 // == // Issue the necessary gl:: commands to draw your scene here
                 gl::BindVertexArray(vaos[model_id]);
