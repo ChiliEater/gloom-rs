@@ -35,7 +35,7 @@ OpenGL makes use of barycentric interpolation which, in simple terms, simply com
 # Task 2
 In this task we will focus on 3 overlapping triangles with different colors and a given transparency. The triangles are in different $z$ planes. 
 
-#### a)
+## Task 2a
 
 First, we make sure that the triangles are drawn back to front. In our case, the order is **red** $\rightarrow$ **green** $\rightarrow$ **blue** as shown in the picture below:
 
@@ -52,14 +52,14 @@ The part where the triangles overlap is mostly blue, which is the color of the c
 
 Now we will swap the color of the triangles. The $z$ position and the drawing order of the triangles remains the same, only the color changes.
   
-- **red** $\rightarrow$ **blue** $\rightarrow$ **green**
-  ![](img/triangles_RBG.png)
+- **red** $\rightarrow$ **blue** $\rightarrow$ **green**  
+  ![](img/triangles_RBG.png)  
   In this case, the overlapping area is mostly green
-- **green** $\rightarrow$ **blue** $\rightarrow$ **red**
-  ![](img/triangles_GBR.png)
+- **green** $\rightarrow$ **blue** $\rightarrow$ **red**  
+  ![](img/triangles_GBR.png)  
   In this case, the overlapping area is mostly red
 
-These are expected resultes considering how OpenGL computes the color with alpha blending :
+These are expected resultes considering how OpenGL computes the color with alpha blending:
 
 $$\mathrm{Color_{new}}=\alpha_\mathrm{source}\times \mathrm{Color_{source}} + (1-\alpha_\mathrm{source})\times \mathrm{Color_{destination}}$$
 
@@ -67,23 +67,23 @@ Here, we have the source alpha set to 33% so, on a pure white background, the co
 
 In the places where they overlap, the destination color is the mix of white and color mentionned above, which will be added to the new source color. For example, in the area where red and blue overlap in the last image, there is a pure blue with 33% transparency added to a light green area which results in a cyan-blue color.
 
-#### b2)
+## Task 2c
 
 Now, we will change the $z$ coordinate of the triangles without changing the color or the order that they are being drawn.
 
-- <span style="color:red"> **back**</span> $\rightarrow$ <span style="color:green"> **front**</span> $\rightarrow$ <span style="color:blue"> **middle**</span>
-  ![](img/triangles_back_front_middle.png)
+- <span style="color:red"> **back**</span> $\rightarrow$ <span style="color:green"> **front**</span> $\rightarrow$ <span style="color:blue"> **middle**</span>  
+  ![](img/triangles_back_front_middle.png)  
   
   Here, the green triangle is drawn before the blue one. The depth buffer detects that the green triangle is closer to the camera and does not render the part of the blue triangle that is behind it.
   
   It still renders the red triangle because it has been drawn before so the depth test is not executed on this one.
 
-- <span style="color:red"> **front**</span> $\rightarrow$ <span style="color:green"> **back**</span> $\rightarrow$ <span style="color:blue"> **middle**</span>
-  ![](img/triangles_front_back_middle.png)
+- <span style="color:red"> **front**</span> $\rightarrow$ <span style="color:green"> **back**</span> $\rightarrow$ <span style="color:blue"> **middle**</span>  
+  ![](img/triangles_front_back_middle.png)  
   
-  Here the red triangle is drawn first and positionned the closest to the camera so anything that is behind it is not rendered thanks to the depth buffer.
+  Here the red triangle is drawn first and positionned the closest to the camera so anything that is behind it is not rendered thanks to the depth buffer.  
 
-  The green triangle is positionned in the back so it does not affect the blue one that is closer but drawn after.
+  The green triangle is positionned in the back so it does not affect the blue one that is closer but drawn after.  
  
 
 # Task 3
@@ -211,7 +211,7 @@ This task simply moves the perspective transformation into the main program loop
 ```rust
 let rotation_matrix: Mat4x4 = glm::rotation(glm::pi(), &glm::vec3(0.0, 1.0, 0.0));
 let translate_matrix: Mat4x4 = glm::translation(&glm::vec3(0.0,0.0,-3.0));
-let perspective_matrix: Mat4x4 = glm::perspective(window_aspect_ratio, 90.0, 1.0, 100.0);
+let perspective_matrix: Mat4x4 = glm::perspective(window_aspect_ratio, glm::half_pi(), 1.0, 100.0);
 let transform_matrix = perspective_matrix * translate_matrix * rotation_matrix;
 ...
 gl::UniformMatrix4fv(3, 1, gl::FALSE, transform_matrix.as_ptr());
@@ -223,6 +223,37 @@ As instructed, we make sure that the perspective is applied last.
 
 ## Task 4c: Keybinds
 
-Movement: WASD/IJKL
-Up/Down: Space/LCtrl
-Camera: Mouse/Arrow keys
+|Movement|Bind|
+|-|-|
+|Forward|`W`/`I`|
+|Backward|`S`/`K`|
+|Left|`A`/`J`|
+|Right|`D`/`L`|
+|Up|`Space`|
+|Down|`Left Control`|
+|Yaw|`←`/`→`|
+|Pitch|`↑`/`↓`|
+
+Note: The camera may also be controlled with a mouse or touchpad.
+
+Note: Up and down movements are always absolute and not relative to the camera direction as that was deemed a bit disorienting.
+
+# Task 5
+
+## Task 5a
+
+In order to make the camera move in the direction that it's looking at something like this does the trick:
+
+```rust
+D | L => {
+    camera_position += (inverse_rotation_matrix
+        * (x_axis.to_homogeneous() * delta_speed))
+        .xyz()
+}
+```
+
+This is repeated for every direction. While the same thing could be done with vertical movement, we chose not to as it feels a bit disorienting.
+
+(`inverse_rotation_matrix` is just the rotation matrix built from the mouse vector * -1)
+
+## Task 5b

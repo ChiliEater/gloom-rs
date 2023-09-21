@@ -1,5 +1,7 @@
 PANDOC_ARGS += --verbose
 PANDOC_ARGS += --highlight-style=pygments # the default theme
+#PANDOC_ARGS += --listings
+#PANDOC_ARGS += -H listings-setup.tex
 
 # Optional filters, needs be installed seperately:
 
