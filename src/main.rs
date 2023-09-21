@@ -414,7 +414,7 @@ fn main() {
             }
             */
             let perspective_matrix: Mat4x4 =
-                glm::perspective(window_aspect_ratio, 90.0, 0.25, 100.0);
+                glm::perspective(window_aspect_ratio, glm::half_pi(), 0.25, 100.0);
 
             // Handle mouse movement. delta contains the x and y movement of the mouse since last frame in pixels
             if let Ok(mut delta) = mouse_delta.lock() {
