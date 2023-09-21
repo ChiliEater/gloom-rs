@@ -273,7 +273,7 @@ fn main() {
         let mut previous_frame_time = first_frame_time;
 
         let mut camera_rotation: glm::Vec3 = glm::vec3(0.0, 0.0, 0.0);
-        let mut camera_position: glm::Vec3 = glm::vec3(0.0, 0.0, 0.0);
+        let mut camera_position: glm::Vec3 = glm::vec3(0.0, 0.0, 2.0);
         let mut sprint = false;
 
         loop {
@@ -440,11 +440,8 @@ fn main() {
 
             camera_rotation.y %= glm::two_pi::<f32>();
 
-            let rotation_matrix: Mat4x4 = glm::rotation(camera_rotation.x, &x_axis)
-                * glm::rotation(camera_rotation.y, &y_axis);
-
             let inverse_rotation_matrix: Mat4x4 = glm::rotation(camera_rotation.x * -1.0, &x_axis)
-                * glm::rotation(camera_rotation.y * -1.0, &y_axis);
+            * glm::rotation(camera_rotation.y * -1.0, &y_axis);
 
             if let Ok(keys) = pressed_keys.lock() {
                 const SPRINT_MULTIPLIER: f32 = 4.0;
@@ -486,6 +483,10 @@ fn main() {
                     }
                 }
             }
+            let rotation_matrix: Mat4x4 = glm::rotation(camera_rotation.x, &x_axis)
+                * glm::rotation(camera_rotation.y, &y_axis);
+
+            unsafe {
             // Calculate transformations
             let translation_matrix: Mat4x4 = glm::translation(&(camera_position * -1.0));
 
@@ -493,7 +494,6 @@ fn main() {
                 perspective_matrix * rotation_matrix * translation_matrix;
             // == // Please compute camera transforms here (exercise 2 & 3)
 
-            unsafe {
                 gl::UniformMatrix4fv(3, 1, gl::FALSE, transform_matrix.as_ptr());
                 //gl::UniformMatrix4fv(4, 1, gl::FALSE, rotation_matrix.as_ptr());
                 // Clear the color and depth buffers
