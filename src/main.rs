@@ -413,26 +413,6 @@ fn main() {
                 }
             }
             */
-            if let Ok(keys) = pressed_keys.lock() {
-                const SPRINT_MULTIPLIER: f32 = 4.0;
-                let mut delta_speed = MOVEMENT_SPEED * delta_time;
-                if keys.contains(&LShift) {
-                    delta_speed *= SPRINT_MULTIPLIER;
-                }
-                for key in keys.iter() {
-                    match key {
-                        D | Right => camera_position.x += delta_speed,
-                        A | Left => camera_position.x -= delta_speed,
-                        Space => camera_position.y += delta_speed,
-                        LControl => camera_position.y -= delta_speed,
-                        S | Down => camera_position.z += delta_speed,
-                        W | Up => camera_position.z -= delta_speed,
-                        _ => {}
-                    }
-                }
-            }
-            // Calculate transformations
-            let translation_matrix: Mat4x4 = glm::translation(&(camera_position * -1.0));
             let perspective_matrix: Mat4x4 =
                 glm::perspective(window_aspect_ratio, 90.0, 0.25, 100.0);
 
@@ -452,9 +432,36 @@ fn main() {
                 *delta = (0.0, 0.0); // reset when done
             }
 
+            camera_rotation.x = (glm::max(&glm::min(&camera_rotation, glm::half_pi()), -glm::half_pi::<f32>())).x;
+            
             let rotation_matrix: Mat4x4 = glm::rotation(camera_rotation.x, &x_axis)
                 * glm::rotation(camera_rotation.y, &y_axis);
-            let transform_matrix: Mat4x4 = perspective_matrix * translation_matrix * rotation_matrix;
+
+            let inverse_rotation_matrix: Mat4x4 = glm::rotation(camera_rotation.x * -1.0, &x_axis)
+                * glm::rotation(camera_rotation.y * -1.0, &y_axis);
+
+            if let Ok(keys) = pressed_keys.lock() {
+                const SPRINT_MULTIPLIER: f32 = 4.0;
+                let mut delta_speed = MOVEMENT_SPEED * delta_time;
+                if keys.contains(&LShift) {
+                    delta_speed *= SPRINT_MULTIPLIER;
+                }
+                for key in keys.iter() {
+                    match key {
+                        D | L => camera_position += (inverse_rotation_matrix * (x_axis.to_homogeneous() * delta_speed)).xyz(),
+                        A | J => camera_position -= (inverse_rotation_matrix * (x_axis.to_homogeneous() * delta_speed)).xyz(),
+                        Space => camera_position += y_axis * delta_speed,
+                        LControl => camera_position -= y_axis * delta_speed,
+                        S | K => camera_position += (inverse_rotation_matrix * (z_axis.to_homogeneous() * delta_speed)).xyz(),
+                        W | I => camera_position -= (inverse_rotation_matrix * (z_axis.to_homogeneous() * delta_speed)).xyz(),
+                        _ => {}
+                    }
+                }
+            }
+            // Calculate transformations
+            let translation_matrix: Mat4x4 = glm::translation(&(camera_position * -1.0));
+
+            let transform_matrix: Mat4x4 = perspective_matrix * rotation_matrix * translation_matrix;
             // == // Please compute camera transforms here (exercise 2 & 3)
 
             unsafe {
