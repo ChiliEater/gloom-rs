@@ -16,6 +16,7 @@ mod obj_parser;
 mod shader;
 mod util;
 
+use glm::{pi, vec3, Mat4x4};
 use glutin::event::{
     DeviceEvent,
     ElementState::{Pressed, Released},
@@ -26,8 +27,9 @@ use glutin::event::{
 use glutin::event_loop::ControlFlow;
 
 // initial window size
-const INITIAL_SCREEN_W: u32 = 400;
-const INITIAL_SCREEN_H: u32 = 400;
+const INITIAL_SCREEN_W: u32 = 800;
+const INITIAL_SCREEN_H: u32 = 800;
+const MOVEMENT_SPEED: f32 = 2.0;
 
 // == // Helper functions to make interacting with OpenGL a little bit prettier. You *WILL* need these! // == //
 
@@ -124,6 +126,10 @@ unsafe fn create_vao(vertices: &Vec<f32>, indices: &Vec<u32>, colors: &Vec<f32>)
 }
 
 fn main() {
+    let x_axis: glm::Vec3 = glm::vec3(1.0, 0.0, 0.0);
+    let y_axis: glm::Vec3 = glm::vec3(0.0, 1.0, 0.0);
+    let z_axis: glm::Vec3 = glm::vec3(0.0, 0.0, 1.0);
+    let origin: glm::Vec3 = glm::vec3(0.0, 0.0, 0.0);
     // Set up the necessary objects to deal with windows and event handling
     let el = glutin::event_loop::EventLoop::new();
     let wb = glutin::window::WindowBuilder::new()
@@ -136,8 +142,11 @@ fn main() {
     let cb = glutin::ContextBuilder::new().with_vsync(true);
     let windowed_context = cb.build_windowed(wb, &el).unwrap();
     // Uncomment these if you want to use the mouse for controls, but want it to be confined to the screen and/or invisible.
-    //windowed_context.window().set_cursor_grab(glutin::window::CursorGrabMode::Confined).expect("failed to grab cursor");
-    //windowed_context.window().set_cursor_visible(false);
+    windowed_context
+        .window()
+        .set_cursor_grab(glutin::window::CursorGrabMode::Confined)
+        .expect("failed to grab cursor");
+    windowed_context.window().set_cursor_visible(false);
 
     // Set up a shared vector for keeping track of currently pressed keys
     let arc_pressed_keys = Arc::new(Mutex::new(Vec::<VirtualKeyCode>::with_capacity(10)));
@@ -193,8 +202,8 @@ fn main() {
 
         // == // Set up your VAO around here
         let model_paths: Vec<String> = vec![
-            "./resources/colored_panes.obj".to_string(),
             "./resources/cube.obj".to_string(),
+            "./resources/colored_panes.obj".to_string(),
             "./resources/square.obj".to_string(),
             "./resources/torus.obj".to_string(),
             "./resources/full_square.obj".to_string(),
@@ -235,7 +244,7 @@ fn main() {
             "./shaders/fragment/spiral.frag".to_string(),
             "./shaders/fragment/color_change.frag".to_string(),
             "./shaders/fragment/triangle.frag".to_string(),
-            ];
+        ];
 
         let mut fragment_shader_id: usize = 0;
 
@@ -245,7 +254,7 @@ fn main() {
             "./shaders/vertex/mirror.vert".to_string(),
             "./shaders/vertex/spin.vert".to_string(),
             "./shaders/vertex/affine_transform.vert".to_string(),
-            ];
+        ];
 
         let mut vertex_shader_id: usize = 0;
 
@@ -262,6 +271,11 @@ fn main() {
         // The main rendering loop
         let first_frame_time = std::time::Instant::now();
         let mut previous_frame_time = first_frame_time;
+
+        let mut camera_rotation: glm::Vec3 = glm::vec3(0.0, 0.0, 0.0);
+        let mut camera_position: glm::Vec3 = glm::vec3(0.0, 0.0, 2.0);
+        let mut sprint = false;
+
         loop {
             if rebuild_shaders {
                 unsafe {
@@ -308,12 +322,15 @@ fn main() {
             let mut vertex_shader_pressed = false;
 
             // Handle keyboard input
+
+            // Shader switching
+            /*
             if let Ok(keys) = pressed_keys.lock() {
                 for key in keys.iter() {
                     match key {
                         // The `VirtualKeyCode` enum is defined here:
                         //    https://docs.rs/winit/0.25.0/winit/event/enum.VirtualKeyCode.html
-                        VirtualKeyCode::A => {
+                        VirtualKeyCode::K => {
                             if !model_changed {
                                 if model_id == 0 {
                                     model_id = models.len();
@@ -324,9 +341,10 @@ fn main() {
                                 model_changed = true;
                                 //println!("{}", model_id);
                             }
-                            model_pressed = true;
+                            model_pressed = true;            if let Ok()
+
                         }
-                        VirtualKeyCode::D => {
+                        VirtualKeyCode::L => {
                             if !model_changed {
                                 model_id += 1;
                                 model_id %= models.len();
@@ -335,7 +353,7 @@ fn main() {
                             }
                             model_pressed = true;
                         }
-                        VirtualKeyCode::Q => {
+                        VirtualKeyCode::U => {
                             if !fragment_shader_changed {
                                 if fragment_shader_id == 0 {
                                     fragment_shader_id = fragment_shaders.len();
@@ -347,7 +365,7 @@ fn main() {
                             }
                             fragment_shader_pressed = true;
                         }
-                        VirtualKeyCode::E => {
+                        VirtualKeyCode::I => {
                             if !fragment_shader_changed {
                                 fragment_shader_id =
                                     (fragment_shader_id + 1) % fragment_shaders.len();
@@ -356,7 +374,7 @@ fn main() {
                             }
                             fragment_shader_pressed = true;
                         }
-                        VirtualKeyCode::Y => {
+                        VirtualKeyCode::O => {
                             if !vertex_shader_changed {
                                 if vertex_shader_id == 0 {
                                     vertex_shader_id = vertex_shaders.len();
@@ -367,7 +385,7 @@ fn main() {
                             }
                             vertex_shader_pressed = true;
                         }
-                        VirtualKeyCode::C => {
+                        VirtualKeyCode::P => {
                             if !vertex_shader_changed {
                                 vertex_shader_id = (vertex_shader_id + 1) % vertex_shaders.len();
                                 vertex_shader_changed = true;
@@ -377,7 +395,8 @@ fn main() {
                         }
 
                         // default handler:
-                        _ => {}
+                        _ => {}            if let Ok()
+
                     }
                 }
 
@@ -393,20 +412,93 @@ fn main() {
                     vertex_shader_changed = false;
                 }
             }
+            */
+            let perspective_matrix: Mat4x4 =
+                glm::perspective(window_aspect_ratio, glm::half_pi(), 0.25, 100.0);
+
             // Handle mouse movement. delta contains the x and y movement of the mouse since last frame in pixels
             if let Ok(mut delta) = mouse_delta.lock() {
+                const X_SENSITIVITY: f32 = 60.0;
+                const Y_SENSITIVITY: f32 = 60.0;
                 // == // Optionally access the accumulated mouse movement between
                 // == // frames here with `delta.0` and `delta.1`
-
+                if let Ok(screen) = window_size.lock() {
+                    camera_rotation += vec3(
+                        delta.1 / screen.1 as f32 * pi::<f32>() * delta_time * X_SENSITIVITY,
+                        delta.0 / screen.0 as f32 * pi::<f32>() * delta_time * Y_SENSITIVITY,
+                        0.0,
+                    );
+                }
                 *delta = (0.0, 0.0); // reset when done
             }
 
-            // == // Please compute camera transforms here (exercise 2 & 3)
+            camera_rotation.x = (glm::max(
+                &glm::min(&camera_rotation, glm::half_pi()),
+                -glm::half_pi::<f32>(),
+            ))
+            .x;
+
+            camera_rotation.y %= glm::two_pi::<f32>();
+
+            let inverse_rotation_matrix: Mat4x4 = glm::rotation(camera_rotation.x * -1.0, &x_axis)
+            * glm::rotation(camera_rotation.y * -1.0, &y_axis);
+
+            if let Ok(keys) = pressed_keys.lock() {
+                const SPRINT_MULTIPLIER: f32 = 4.0;
+                let mut delta_speed = MOVEMENT_SPEED * delta_time;
+                if keys.contains(&LShift) {
+                    delta_speed *= SPRINT_MULTIPLIER;
+                }
+                const X_SENSITIVITY: f32 = 7.0;
+                const Y_SENSITIVITY: f32 = 7.0;
+                for key in keys.iter() {
+                    match key {
+                        D | L => {
+                            camera_position += (inverse_rotation_matrix
+                                * (x_axis.to_homogeneous() * delta_speed))
+                                .xyz()
+                        }
+                        A | J => {
+                            camera_position -= (inverse_rotation_matrix
+                                * (x_axis.to_homogeneous() * delta_speed))
+                                .xyz()
+                        }
+                        Space => camera_position += y_axis * delta_speed,
+                        LControl => camera_position -= y_axis * delta_speed,
+                        S | K => {
+                            camera_position += (inverse_rotation_matrix
+                                * (z_axis.to_homogeneous() * delta_speed))
+                                .xyz()
+                        }
+                        W | I => {
+                            camera_position -= (inverse_rotation_matrix
+                                * (z_axis.to_homogeneous() * delta_speed))
+                                .xyz()
+                        }
+                        Left => camera_rotation.y -= Y_SENSITIVITY * delta_time,
+                        Right => camera_rotation.y += Y_SENSITIVITY * delta_time,
+                        Up => camera_rotation.x -= X_SENSITIVITY * delta_time,
+                        Down => camera_rotation.x += X_SENSITIVITY * delta_time,
+                        _ => {}
+                    }
+                }
+            }
+            let rotation_matrix: Mat4x4 = glm::rotation(camera_rotation.x, &x_axis)
+                * glm::rotation(camera_rotation.y, &y_axis);
 
             unsafe {
+            // Calculate transformations
+            let translation_matrix: Mat4x4 = glm::translation(&(camera_position * -1.0));
+
+            let transform_matrix: Mat4x4 =
+                perspective_matrix * rotation_matrix * translation_matrix;
+            // == // Please compute camera transforms here (exercise 2 & 3)
+
+                gl::UniformMatrix4fv(3, 1, gl::FALSE, transform_matrix.as_ptr());
+                //gl::UniformMatrix4fv(4, 1, gl::FALSE, rotation_matrix.as_ptr());
                 // Clear the color and depth buffers
-                //gl::ClearColor(0.035, 0.046, 0.078, 1.0); // night sky, full opacity
-                gl::ClearColor(1.0, 1.0, 1.0, 1.0); // white background, full opacity
+                gl::ClearColor(0.035, 0.046, 0.078, 1.0); // night sky, full opacity
+                                                          //gl::ClearColor(1.0, 1.0, 1.0, 1.0); // white background, full opacity
                 gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
                 // == // Issue the necessary gl:: commands to draw your scene here
                 gl::BindVertexArray(vaos[model_id]);
@@ -505,7 +597,7 @@ fn main() {
                         *control_flow = ControlFlow::Exit;
                     }
                     Q => {
-                        //*control_flow = ControlFlow::Exit;
+                        *control_flow = ControlFlow::Exit;
                     }
                     _ => {}
                 }
