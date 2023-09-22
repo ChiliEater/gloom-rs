@@ -294,3 +294,48 @@ bool pattern = (mod(floor(vert_position.x*size),2)
 color = (pattern) ? color_1 : color_2;
 ```
 
+
+## Task 5d
+
+In this part we discuss wether or not the following transformations are possible using a single 4x4 matrix.
+
+### I
+
+![](img/task5d-1.png)
+
+This is easily achievable using shear along $x$ and $y$. 
+
+### II
+
+![](img/task5d-2.png)
+
+This is not possible under the assumption that the points all lie in the same plane.
+
+If we are allowed to place the points in different $z$ planes, then it can be done using perspective transform and putting the points in the top left and right corner (green) at a very far $z$, the intermediate ones (blue) a bit closer and the rest (red) stay at $z=0$.
+
+The perspective transform is a 4x4 matrix that will bring the points further from the camera closer to the center of the screen, achieving the transformation in the picture.
+
+![](img/task5d-2-edited.png)
+
+### III
+
+![](img/task5d-3.png)
+
+First we apply a rotation matrix some degrees around the x-axis. Then, we apply a perspective transformation matrix.
+
+Alternatively, we can can just move the upper to vertices back along the z-axis and apply a perspective transformation matrix.
+
+### IV
+
+![](img/task5d-4.png)
+
+It is possible to do the following transformation:
+
+1. Rotate 60° around the $y$ axis with the left edge of the left square as a pivot.
+2. Scale the $x$ components by a factor 2 with the left edge of the left square as a pivot.
+
+Thi first step will make the squares look like  rectangles of size (width = 0.5, height = 1). The distance between the two is now
+
+### V
+
+![](img/task5d-5.png)
