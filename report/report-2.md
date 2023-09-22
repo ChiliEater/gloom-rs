@@ -23,9 +23,6 @@ links-as-notes: true
 # The document is following this break is written using "Markdown" syntax
 ---
 
-
-Note: Use Q and E to change fragment shaders, A and D to change models, Y and C to change vertex shaders.
-
 # Task 1b
 
 ![](img/rgb-cube.png)
@@ -329,13 +326,18 @@ Alternatively, we can can just move the upper to vertices back along the z-axis 
 
 ![](img/task5d-4.png)
 
-It is possible to do the following transformation:
-
-1. Rotate 60° around the $y$ axis with the left edge of the left square as a pivot.
-2. Scale the $x$ components by a factor 2 with the left edge of the left square as a pivot.
-
-Thi first step will make the squares look like  rectangles of size (width = 0.5, height = 1). The distance between the two is now
+This is only possible if the 2 squares are in different $z$ planes. Then we can use shearing along the $x$ axis in the $(x,z)$ plane (s). This is a simple shearing matrix where $a$ needs to be adjusted depending on the distance between the planes:
+```glsl
+mat4 shearMatrix = mat4(
+    1.0, 0.0, a, 0.0,
+    0.0, 1.0, 0.0, 0.0,
+    0.0, 0.0, 1.0, 0.0,
+    0.0, 0.0, 0.0, 1.0
+);
+```
 
 ### V
 
 ![](img/task5d-5.png)
+
+Again, this is possible to achieve with different $z$ planes and the perspective matrix. The triangles get closer to the camera from left to right. Note that this is not a linear distribution along $z$, more like a quadratic distribution to achieve the "curved" effect in the image.
