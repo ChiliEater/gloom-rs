@@ -300,7 +300,15 @@ In this part we discuss wether or not the following transformations are possible
 
 ![](img/task5d-1.png)
 
-This is easily achievable using shear along $x$ and $y$. 
+This is easily achievable using shear along $x$ and $y$ in the $(x,y)$ plane:
+```glsl
+mat4 shearMatrix = mat4(
+    1.0, a, 0.0, 0.0,
+    b, 1.0, 0.0, 0.0,
+    0.0, 0.0, 1.0, 0.0,
+    0.0, 0.0, 0.0, 1.0
+);
+``` 
 
 ### II
 
