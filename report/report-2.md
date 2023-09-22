@@ -178,7 +178,7 @@ In a rotation matrix, there are 4 coordinates that need to be changed at the sam
 
 ## Task 4a
 
-Passing in a uniform matrx is pretty simple with our current setup. First, the image below shows how the RGB cube is rendered without any transformation apart from perspective transformation.
+Passing in a uniform matrix is pretty simple with our current setup. First, the image below shows how the RGB cube is rendered without any transformation apart from perspective transformation.
 
 ![](img/rgbcube-regular.png)
 
@@ -257,3 +257,37 @@ This is repeated for every direction. While the same thing could be done with ve
 (`inverse_rotation_matrix` is just the rotation matrix built from the mouse vector * -1)
 
 ## Task 5b
+
+Here we focus on the effect of diifferent interpolation methods, namely `smooth` and `noperspective`. To show their effect we are going to use a square composed of 2 triangles lying flat "on the ground" ($y=0$).
+
+Smooth interpolation follows perspective transform, as shown in the picture below:
+![](img/smooth_interpolation.png)
+
+Here the checkerboard lines follow the expected geometry across the whole plane, so their apparent angle changes along the $x$ axis.
+
+When `noperspective` is used, the pattern is only computed once based on a single vertex so the angle will be the same for the whole triangle:
+
+![](img/noperspective_interpolation.png)
+
+In this image we can see that the "horizontal" and "vertical" lines are all parallel in each triangle but with reference to different edges, creating a strange warping motion when the camera is moving.
+
+To achieve this effect, we added an output to the vertex shader :
+```glsl
+out vec4 vert_position;
+...
+vec4 new_position = transform * position;
+vert_position = new_position;
+```
+
+This can then be used as input in the fragment shader to draw the checkerboard pattern (remove `noperspective` for smooth interpolation):
+
+```glsl
+in noperspective vec4 vert_position;
+...
+// Checkerboard
+int size = 5;
+bool pattern = (mod(floor(vert_position.x*size),2)
+    ==mod(floor(vert_position.y*size),2));
+    
+color = (pattern) ? color_1 : color_2;
+```

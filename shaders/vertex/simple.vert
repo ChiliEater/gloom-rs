@@ -3,6 +3,7 @@
 in vec4 position;
 in layout(location = 2) vec4 color;
 out vec4 vert_color;
+out vec4 vert_position;
 
 // Uniform variables that need to be updated in the rendering loop
 uniform layout(location=1) float time;
@@ -14,5 +15,6 @@ void main()
         vec4 new_position = transform * position;
         
         vert_color = color;
+        vert_position = new_position;
         gl_Position =  new_position;
 }
