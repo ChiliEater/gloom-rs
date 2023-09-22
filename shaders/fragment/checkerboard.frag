@@ -27,7 +27,7 @@ void main()
 void main()
 {
     //vec4 color;
-    float time_dump = time; // just use `time`somewhere so that it doesn't crash
+    float time_dump = time; // just use `time` somewhere so that it doesn't crash
     vec4 color_1 = vec4(0.6f, 0.1f, 0.2f, 1.0f);
     vec4 color_2 = vec4(1.0f, 1.0f, 1.0f, 1.0f);
     
