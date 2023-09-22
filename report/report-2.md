@@ -9,7 +9,7 @@ author:
 date: \today # This is a latex command, ignored for HTML output
 lang: en-US
 papersize: a4
-geometry: margin=4cm
+geometry: margin=2cm
 toc: false
 toc-title: "Table of Contents"
 toc-depth: 2
@@ -59,11 +59,11 @@ Now we will swap the color of the triangles. The $z$ position and the drawing or
   ![](img/triangles_GBR.png)  
   In this case, the overlapping area is mostly red
 
-These are expected resultes considering how OpenGL computes the color with alpha blending:
+These are expected results considering how OpenGL computes the color with alpha blending:
 
 $$\mathrm{Color_{new}}=\alpha_\mathrm{source}\times \mathrm{Color_{source}} + (1-\alpha_\mathrm{source})\times \mathrm{Color_{destination}}$$
 
-Here, we have the source alpha set to 33% so, on a pure white background, the color of a triangle will be white + some color which is why the triangle look very light.
+Here, we have the source alpha set to 33% so, on a pure white background, the color of a triangle will be white + some color which is why the triangles look very light.
 
 In the places where they overlap, the destination color is the mix of white and color mentionned above, which will be added to the new source color. For example, in the area where red and blue overlap in the last image, there is a pure blue with 33% transparency added to a light green area which results in a cyan-blue color.
 
@@ -71,14 +71,14 @@ In the places where they overlap, the destination color is the mix of white and 
 
 Now, we will change the $z$ coordinate of the triangles without changing the color or the order that they are being drawn.
 
-- <span style="color:red"> **back**</span> $\rightarrow$ <span style="color:green"> **front**</span> $\rightarrow$ <span style="color:blue"> **middle**</span>  
+- $\textcolor{red}{\textbf{back}} \rightarrow \textcolor{green}{\textbf{front}} \rightarrow \textcolor{blue}{\textbf{middle}}$  
   ![](img/triangles_back_front_middle.png)  
   
   Here, the green triangle is drawn before the blue one. The depth buffer detects that the green triangle is closer to the camera and does not render the part of the blue triangle that is behind it.
   
   It still renders the red triangle because it has been drawn before so the depth test is not executed on this one.
 
-- <span style="color:red"> **front**</span> $\rightarrow$ <span style="color:green"> **back**</span> $\rightarrow$ <span style="color:blue"> **middle**</span>  
+- $\textcolor{red}{\textbf{front}} \rightarrow \textcolor{green}{\textbf{back}} \rightarrow \textcolor{blue}{\textbf{middle}}$  
   ![](img/triangles_front_back_middle.png)  
   
   Here the red triangle is drawn first and positionned the closest to the camera so anything that is behind it is not rendered thanks to the depth buffer.  
@@ -110,7 +110,7 @@ void main()
     gl_Position = A*position;
 }
 ```
-The output vertices give the following image:
+The output vertices result in the following image:
 
 ![](img/3a-monkey.png)
 
@@ -132,6 +132,7 @@ To better see the effect of changing only one variable (starting from the identi
 - $a$ and $e$ impacts the scaling of the $x$ anf $y$ coordinate respectively as shown below. It should be noted that having a negative value flips the projection plane.
   
 ![](img/a3.png)
+
 *$a$ : x scaling*
 
 ![](img/var-e.png)
@@ -261,6 +262,7 @@ This is repeated for every direction. While the same thing could be done with ve
 Here we focus on the effect of diifferent interpolation methods, namely `smooth` and `noperspective`. To show their effect we are going to use a square composed of 2 triangles lying flat "on the ground" ($y=0$).
 
 Smooth interpolation follows perspective transform, as shown in the picture below:
+
 ![](img/smooth_interpolation.png)
 
 Here the checkerboard lines follow the expected geometry across the whole plane, so their apparent angle changes along the $x$ axis.
@@ -291,3 +293,4 @@ bool pattern = (mod(floor(vert_position.x*size),2)
     
 color = (pattern) ? color_1 : color_2;
 ```
+
