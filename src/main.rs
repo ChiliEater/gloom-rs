@@ -202,6 +202,8 @@ fn main() {
 
         // == // Set up your VAO around here
         let model_paths: Vec<String> = vec![
+            "./resources/lunarsurface.obj".to_string(),
+            "./resources/helicopter.obj".to_string(),
             "./resources/cube.obj".to_string(),
             "./resources/colored_panes.obj".to_string(),
             "./resources/square.obj".to_string(),
