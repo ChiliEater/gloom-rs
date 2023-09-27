@@ -17,7 +17,6 @@ use std::thread::{self, JoinHandle};
 use std::{mem, os::raw::c_void, ptr};
 
 mod input;
-mod obj_parser;
 mod render;
 mod shader;
 mod util;

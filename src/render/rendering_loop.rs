@@ -4,7 +4,7 @@ use std::thread::{self, JoinHandle};
 use std::{mem, os::raw::c_void, ptr};
 
 use crate::input::controls::Controls;
-use crate::{obj_parser, shader, util, INITIAL_SCREEN_H, INITIAL_SCREEN_W};
+use crate::{shader, util, INITIAL_SCREEN_H, INITIAL_SCREEN_W};
 use glm::{pi, vec3, Mat4x4};
 use glutin::event::{
     DeviceEvent,
