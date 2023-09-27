@@ -1,18 +1,20 @@
-use glutin::event::VirtualKeyCode;
+use glutin::{event::VirtualKeyCode, ContextWrapper, NotCurrent, window::Window};
 use std::sync::{Arc, Mutex};
 
 pub struct WindowLocks {
     window_size: Arc<Mutex<(u32, u32, bool)>>,
     pressed_keys: Arc<Mutex<Vec<VirtualKeyCode>>>,
     mouse_delta: Arc<Mutex<(f32, f32)>>,
+    window_context: Arc<Mutex<ContextWrapper<NotCurrent, Window>>>,
 }
 
 impl WindowLocks {
-    pub fn new(initial_screen_w: u32, initial_screen_h: u32) -> WindowLocks {
+    pub fn new(initial_screen_w: u32, initial_screen_h: u32, window_context: ContextWrapper<NotCurrent, Window>) -> WindowLocks {
         WindowLocks {
             window_size: Arc::new(Mutex::new((initial_screen_w, initial_screen_h, false))),
             pressed_keys: Arc::new(Mutex::new(Vec::<VirtualKeyCode>::with_capacity(10))),
             mouse_delta: Arc::new(Mutex::new((0f32, 0f32))),
+            window_context: Arc::new(Mutex::new(window_context)),
         }
     }
 
@@ -26,5 +28,9 @@ impl WindowLocks {
 
     pub fn mouse_delta(&self) -> Arc<Mutex<(f32, f32)>> {
         Arc::clone(&self.mouse_delta)
+    }
+
+    pub fn window_context(&self) -> Arc<Mutex<ContextWrapper<NotCurrent, Window>>> {
+        Arc::clone(&self.window_context)
     }
 }

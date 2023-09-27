@@ -1,16 +1,15 @@
 use crate::render::window_locks::{WindowLocks, self};
-use glutin::event::{
+use glutin::{event::{
     DeviceEvent,
     ElementState::{Pressed, Released},
     Event, KeyboardInput,
     VirtualKeyCode::{self, *},
     WindowEvent,
-};
+}, platform::run_return::EventLoopExtRunReturn};
 use glutin::event_loop::ControlFlow;
 use std::sync::{Arc, Mutex, RwLock};
 
 pub struct InputLoop {
-    event_loop: glutin::event_loop::EventLoop<()>,
     render_thread_healthy: Arc<RwLock<bool>>,
     window_size: Arc<Mutex<(u32, u32, bool)>>,
     pressed_keys: Arc<Mutex<Vec<VirtualKeyCode>>>,
@@ -18,9 +17,8 @@ pub struct InputLoop {
 }
 
 impl InputLoop {
-    pub fn new(event_loop: glutin::event_loop::EventLoop<()>, render_thread_healthy: Arc<RwLock<bool>>, window_locks: &WindowLocks) -> InputLoop {
+    pub fn new(render_thread_healthy: Arc<RwLock<bool>>, window_locks: &WindowLocks) -> InputLoop {
         InputLoop {
-            event_loop,
             render_thread_healthy,
             window_size: window_locks.window_size(),
             pressed_keys: window_locks.pressed_keys(),
@@ -28,13 +26,13 @@ impl InputLoop {
         }
     }
 
-    pub fn start(self) {
+    pub fn start(&self, event_loop: &mut glutin::event_loop::EventLoop<()>) {
         // Start the event loop -- This is where window events are initially handled
         let render_thread_healthy = Arc::clone(&self.render_thread_healthy);
         let window_size = Arc::clone(&self.window_size);
         let mouse_delta = Arc::clone(&self.mouse_delta);
         let pressed_keys = Arc::clone(&self.pressed_keys);
-        self.event_loop.run(move |event, _, control_flow| {
+        event_loop.run_return(move |event, _, control_flow| {
             *control_flow = ControlFlow::Wait;
     
             // Terminate program if render thread panics

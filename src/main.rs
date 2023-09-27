@@ -8,16 +8,16 @@
 #![allow(unused_variables)]
 */
 extern crate nalgebra_glm as glm;
-use std::sync::{Arc, Mutex, RwLock};
-use std::thread;
-use std::{mem, os::raw::c_void, ptr};
 use input::input_loop::{self, InputLoop};
 use render::rendering_loop::RenderingLoop;
 use render::window_locks::{self, WindowLocks};
+use std::sync::{Arc, Mutex, RwLock};
+use std::thread;
+use std::{mem, os::raw::c_void, ptr};
 
 mod input;
-mod render;
 mod obj_parser;
+mod render;
 mod shader;
 mod util;
 
@@ -136,9 +136,8 @@ fn main() {
     let z_axis: glm::Vec3 = glm::vec3(0.0, 0.0, 1.0);
     let origin: glm::Vec3 = glm::vec3(0.0, 0.0, 0.0);
     // Set up the necessary objects to deal with windows and event handling
-    let window_locks = WindowLocks::new(INITIAL_SCREEN_W, INITIAL_SCREEN_H);
 
-    let el = glutin::event_loop::EventLoop::new();
+    let mut el = glutin::event_loop::EventLoop::new();
     let wb = glutin::window::WindowBuilder::new()
         .with_title("Gloom-rs")
         .with_resizable(true)
@@ -148,15 +147,16 @@ fn main() {
         ));
     let cb = glutin::ContextBuilder::new().with_vsync(true);
     let window_context = cb.build_windowed(wb, &el).unwrap();
+    let window_locks = WindowLocks::new(INITIAL_SCREEN_W, INITIAL_SCREEN_H, window_context);
     // Uncomment these if you want to use the mouse for controls, but want it to be confined to the screen and/or invisible.
     // Spawn a separate thread for rendering, so event handling doesn't block rendering
-    let rendering_loop = RenderingLoop::new(window_context, &window_locks);
+    let mut rendering_loop = RenderingLoop::new(&window_locks);
     rendering_loop.start();
     // == //
     // == // From here on down there are only internals.
     // == //
     let health = rendering_loop.watch_health();
 
-    let input_loop = InputLoop::new(el, health, &window_locks);
-    input_loop.start();
+    let input_loop = InputLoop::new(health, &window_locks);
+    input_loop.start(&mut el);
 }

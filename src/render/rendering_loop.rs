@@ -25,24 +25,26 @@ pub struct RenderingLoop {
     pressed_keys: Arc<Mutex<Vec<VirtualKeyCode>>>,
     mouse_delta: Arc<Mutex<(f32, f32)>>,
     render_thread: Option<JoinHandle<()>>,
-    window_context: ContextWrapper<NotCurrent, Window>,
+    window_context: Arc<Mutex<ContextWrapper<NotCurrent, Window>>>,
 }
 
 impl RenderingLoop {
-    pub fn new(
-        window_context: ContextWrapper<NotCurrent, Window>,
-        window_locks: &WindowLocks,
-    ) -> RenderingLoop {
+    pub fn new(window_locks: &WindowLocks) -> RenderingLoop {
         RenderingLoop {
             window_size: window_locks.window_size(),
             pressed_keys: window_locks.pressed_keys(),
             mouse_delta: window_locks.mouse_delta(),
+            window_context: window_locks.window_context(),
             render_thread: None,
-            window_context,
         }
     }
 
-    pub fn start(mut self) {
+    pub fn start(&mut self) {
+        // Start the event loop -- This is where window events are initially handled
+        let window_size = Arc::clone(&self.window_size);
+        let mouse_delta = Arc::clone(&self.mouse_delta);
+        let pressed_keys = Arc::clone(&self.pressed_keys);
+        let window_context = Arc::clone(&self.window_context);
         self.render_thread = Some(thread::spawn(move || {
             let x_axis: glm::Vec3 = glm::vec3(1.0, 0.0, 0.0);
             let y_axis: glm::Vec3 = glm::vec3(0.0, 1.0, 0.0);
@@ -53,9 +55,13 @@ impl RenderingLoop {
             // This has to be done inside of the rendering thread, because
             // an active OpenGL context cannot safely traverse a thread boundary
             let context = unsafe {
-                let c = self.window_context.make_current().unwrap();
-                gl::load_with(|symbol| c.get_proc_address(symbol) as *const _);
-                c
+                if let Ok(ctx) = window_context.lock() {
+                    let c = ctx.make_current().unwrap();
+                    gl::load_with(|symbol| c.get_proc_address(symbol) as *const _);
+                    c
+                } else {
+                    panic!("Unable to lock window context.");
+                }
             };
 
             let mut window_aspect_ratio = INITIAL_SCREEN_W as f32 / INITIAL_SCREEN_H as f32;
@@ -178,7 +184,7 @@ impl RenderingLoop {
                 previous_frame_time = now;
 
                 // Handle resize events
-                if let Ok(mut new_size) = self.window_size.lock() {
+                if let Ok(mut new_size) = window_size.lock() {
                     if new_size.2 {
                         context.resize(glutin::dpi::PhysicalSize::new(new_size.0, new_size.1));
                         window_aspect_ratio = new_size.0 as f32 / new_size.1 as f32;
@@ -202,12 +208,12 @@ impl RenderingLoop {
                     glm::perspective(window_aspect_ratio, glm::half_pi(), 0.25, 100.0);
 
                 // Handle mouse movement. delta contains the x and y movement of the mouse since last frame in pixels
-                if let Ok(mut delta) = self.mouse_delta.lock() {
+                if let Ok(mut delta) = mouse_delta.lock() {
                     const X_SENSITIVITY: f32 = 60.0;
                     const Y_SENSITIVITY: f32 = 60.0;
                     // == // Optionally access the accumulated mouse movement between
                     // == // frames here with `delta.0` and `delta.1`
-                    if let Ok(screen) = self.window_size.lock() {
+                    if let Ok(screen) = window_size.lock() {
                         camera_rotation += vec3(
                             delta.1 / screen.1 as f32 * pi::<f32>() * delta_time * X_SENSITIVITY,
                             delta.0 / screen.0 as f32 * pi::<f32>() * delta_time * Y_SENSITIVITY,
@@ -229,7 +235,7 @@ impl RenderingLoop {
                     glm::rotation(camera_rotation.x * -1.0, &x_axis)
                         * glm::rotation(camera_rotation.y * -1.0, &y_axis);
 
-                if let Ok(keys) = self.pressed_keys.lock() {
+                if let Ok(keys) = pressed_keys.lock() {
                     const SPRINT_MULTIPLIER: f32 = 4.0;
                     let mut delta_speed = MOVEMENT_SPEED * delta_time;
                     if keys.contains(&LShift) {
@@ -303,38 +309,39 @@ impl RenderingLoop {
     }
 
     pub fn enable_mouse_input(&self) {
-        self.window_context
-            .window()
-            .set_cursor_grab(glutin::window::CursorGrabMode::Confined)
-            .expect("failed to grab cursor");
-        self.window_context.window().set_cursor_visible(false);
+        if let Ok(window_context) = self.window_context.lock() {
+            window_context
+                .window()
+                .set_cursor_grab(glutin::window::CursorGrabMode::Confined)
+                .expect("failed to grab cursor");
+            window_context.window().set_cursor_visible(false);
+        }
     }
 
     pub fn disable_mouse_input(&self) {
-        self.window_context
-            .window()
-            .set_cursor_grab(glutin::window::CursorGrabMode::None)
-            .expect("failed to grab cursor");
-        self.window_context.window().set_cursor_visible(true);
+        if let Ok(window_context) = self.window_context.lock() {
+            window_context
+                .window()
+                .set_cursor_grab(glutin::window::CursorGrabMode::None)
+                .expect("failed to grab cursor");
+            window_context.window().set_cursor_visible(true);
+        }
     }
 
     pub fn watch_health(self) -> Arc<RwLock<bool>> {
         // Keep track of the health of the rendering thread
         let render_thread_healthy = Arc::new(RwLock::new(true));
         let render_thread_watchdog = Arc::clone(&render_thread_healthy);
-        thread::spawn(move || {
-            match self.render_thread {
-                Some(thread) => {
-                    if thread.join().is_err() {
-                        if let Ok(mut health) = render_thread_watchdog.write() {
-                            println!("Render thread panicked!");
-                            *health = false;
-                        }
+        thread::spawn(move || match self.render_thread {
+            Some(thread) => {
+                if thread.join().is_err() {
+                    if let Ok(mut health) = render_thread_watchdog.write() {
+                        println!("Render thread panicked!");
+                        *health = false;
                     }
-
-                },
-                None => (),
+                }
             }
+            None => (),
         });
         render_thread_healthy
     }
