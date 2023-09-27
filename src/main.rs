@@ -9,6 +9,7 @@
 */
 extern crate nalgebra_glm as glm;
 use input::input_loop::{self, InputLoop};
+use render::meshes::Meshes;
 use render::rendering_loop::RenderingLoop;
 use render::window_locks::{self, WindowLocks};
 use std::sync::{Arc, Mutex, RwLock};
@@ -59,9 +60,18 @@ fn main() {
     let window_locks_render = Arc::clone(&arc_window_locks);
     let window_locks_input = Arc::clone(&arc_window_locks);
 
+
+    let model_paths: Vec<String> = vec![
+        //"./resources/lunarsurface.obj".to_string(),
+        //"./resources/helicopter.obj".to_string(),
+        "./resources/cube.obj".to_string(),
+    ];
+    let mut models = Meshes::new();
+    models.add_all(&model_paths);
+
     // Spawn render thread
     let render_thread = thread::spawn(move || {
-        let mut rendering_loop = RenderingLoop::new(&window_locks_render, window_context);
+        let mut rendering_loop = RenderingLoop::new(&window_locks_render, window_context, models);
         rendering_loop.enable_mouse_input();
         rendering_loop.start();
     });
@@ -102,71 +112,6 @@ fn offset<T>(n: u32) -> *const c_void {
 
 // Get a null pointer (equivalent to an offset of 0)
 // ptr::null()
-
-// == // Generate your VAO here
-pub unsafe fn create_vao(vertices: &Vec<f32>, indices: &Vec<u32>, colors: &Vec<f32>) -> u32 {
-    // Generate array & store ID
-    let mut vao_id: u32 = 0;
-    gl::GenVertexArrays(1, &mut vao_id);
-
-    // Bind VAO
-    gl::BindVertexArray(vao_id);
-
-    // Generate buffer & store ID
-    let mut vbo_id: u32 = 0;
-    gl::GenBuffers(1, &mut vbo_id);
-
-    // Bind VBO
-    gl::BindBuffer(gl::ARRAY_BUFFER, vbo_id);
-
-    // Fill VBO
-    gl::BufferData(
-        gl::ARRAY_BUFFER,
-        byte_size_of_array(vertices),
-        pointer_to_array(vertices),
-        gl::STATIC_DRAW,
-    );
-
-    // Setup VAP (clean this up?)
-    let attribute_index = 0;
-    gl::VertexAttribPointer(attribute_index, 4, gl::FLOAT, gl::FALSE, 0, ptr::null());
-
-    // Enable VBO
-    gl::EnableVertexAttribArray(attribute_index);
-
-    // Generate index buffer & ID
-    let mut ibo_id: u32 = 0;
-    gl::GenBuffers(1, &mut ibo_id);
-
-    // Bind IBO
-    gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ibo_id);
-
-    // Fill IBO
-    gl::BufferData(
-        gl::ELEMENT_ARRAY_BUFFER,
-        byte_size_of_array(indices),
-        pointer_to_array(indices),
-        gl::STATIC_DRAW,
-    );
-
-    let mut color_id: u32 = 0;
-    gl::GenBuffers(1, &mut color_id);
-
-    gl::BindBuffer(gl::ARRAY_BUFFER, color_id);
-
-    gl::BufferData(
-        gl::ARRAY_BUFFER,
-        byte_size_of_array(colors),
-        pointer_to_array(colors),
-        gl::STATIC_DRAW,
-    );
-
-    let color_attribute = 2;
-    gl::VertexAttribPointer(color_attribute, 4, gl::FLOAT, gl::FALSE, 0, ptr::null());
-    gl::EnableVertexAttribArray(color_attribute);
-
-    vao_id
-}
 
 pub fn watch_health(render_thread: JoinHandle<()>) -> Arc<RwLock<bool>> {
     // Keep track of the health of the rendering thread
