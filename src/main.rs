@@ -12,7 +12,7 @@ use input::input_loop::{self, InputLoop};
 use render::rendering_loop::RenderingLoop;
 use render::window_locks::{self, WindowLocks};
 use std::sync::{Arc, Mutex, RwLock};
-use std::thread;
+use std::thread::{self, JoinHandle};
 use std::{mem, os::raw::c_void, ptr};
 
 mod input;
@@ -35,6 +35,45 @@ use glutin::event_loop::ControlFlow;
 const INITIAL_SCREEN_W: u32 = 800;
 const INITIAL_SCREEN_H: u32 = 800;
 const MOVEMENT_SPEED: f32 = 2.0;
+
+fn main() {
+    let x_axis: glm::Vec3 = glm::vec3(1.0, 0.0, 0.0);
+    let y_axis: glm::Vec3 = glm::vec3(0.0, 1.0, 0.0);
+    let z_axis: glm::Vec3 = glm::vec3(0.0, 0.0, 1.0);
+    let origin: glm::Vec3 = glm::vec3(0.0, 0.0, 0.0);
+    
+    // Set up the necessary objects to deal with windows and event handling
+    let mut event_loop = glutin::event_loop::EventLoop::new();
+    let window_builder = glutin::window::WindowBuilder::new()
+        .with_title("Gloom-rs")
+        .with_resizable(true)
+        .with_inner_size(glutin::dpi::LogicalSize::new(
+            INITIAL_SCREEN_W,
+            INITIAL_SCREEN_H,
+        ));
+    let context_builder = glutin::ContextBuilder::new().with_vsync(true);
+    let window_context = context_builder
+        .build_windowed(window_builder, &event_loop)
+        .unwrap();
+    let window_locks = WindowLocks::new(INITIAL_SCREEN_W, INITIAL_SCREEN_H);
+    let arc_window_locks = Arc::new(window_locks);
+    let window_locks_render = Arc::clone(&arc_window_locks);
+    let window_locks_input = Arc::clone(&arc_window_locks);
+
+    // Spawn render thread
+    let render_thread = thread::spawn(move || {
+        let mut rendering_loop = RenderingLoop::new(&window_locks_render, window_context);
+        rendering_loop.enable_mouse_input();
+        rendering_loop.start();
+    });
+
+    // Watch render thread health
+    let health = watch_health(render_thread);
+
+    // Spawn input thread
+    let input_loop = InputLoop::new(health, &window_locks_input);
+    input_loop.start(&mut event_loop);
+}
 
 // == // Helper functions to make interacting with OpenGL a little bit prettier. You *WILL* need these! // == //
 
@@ -130,33 +169,17 @@ pub unsafe fn create_vao(vertices: &Vec<f32>, indices: &Vec<u32>, colors: &Vec<f
     vao_id
 }
 
-fn main() {
-    let x_axis: glm::Vec3 = glm::vec3(1.0, 0.0, 0.0);
-    let y_axis: glm::Vec3 = glm::vec3(0.0, 1.0, 0.0);
-    let z_axis: glm::Vec3 = glm::vec3(0.0, 0.0, 1.0);
-    let origin: glm::Vec3 = glm::vec3(0.0, 0.0, 0.0);
-    // Set up the necessary objects to deal with windows and event handling
-
-    let mut el = glutin::event_loop::EventLoop::new();
-    let wb = glutin::window::WindowBuilder::new()
-        .with_title("Gloom-rs")
-        .with_resizable(true)
-        .with_inner_size(glutin::dpi::LogicalSize::new(
-            INITIAL_SCREEN_W,
-            INITIAL_SCREEN_H,
-        ));
-    let cb = glutin::ContextBuilder::new().with_vsync(true);
-    let window_context = cb.build_windowed(wb, &el).unwrap();
-    let window_locks = WindowLocks::new(INITIAL_SCREEN_W, INITIAL_SCREEN_H, window_context);
-    // Uncomment these if you want to use the mouse for controls, but want it to be confined to the screen and/or invisible.
-    // Spawn a separate thread for rendering, so event handling doesn't block rendering
-    let mut rendering_loop = RenderingLoop::new(&window_locks);
-    rendering_loop.start();
-    // == //
-    // == // From here on down there are only internals.
-    // == //
-    let health = rendering_loop.watch_health();
-
-    let input_loop = InputLoop::new(health, &window_locks);
-    input_loop.start(&mut el);
+pub fn watch_health(render_thread: JoinHandle<()>) -> Arc<RwLock<bool>> {
+    // Keep track of the health of the rendering thread
+    let render_thread_healthy = Arc::new(RwLock::new(true));
+    let render_thread_watchdog = Arc::clone(&render_thread_healthy);
+    thread::spawn(move || {
+        if render_thread.join().is_err() {
+            if let Ok(mut health) = render_thread_watchdog.write() {
+                println!("Render thread panicked!");
+                *health = false;
+            }
+        }
+    });
+    render_thread_healthy
 }
