@@ -23,8 +23,6 @@ use super::window_locks::WindowLocks;
 
 pub struct RenderingLoop {
     window_size: Arc<Mutex<(u32, u32, bool)>>,
-    pressed_keys: Arc<Mutex<Vec<VirtualKeyCode>>>,
-    mouse_delta: Arc<Mutex<(f32, f32)>>,
     context: ContextWrapper<PossiblyCurrent, Window>,
     window_aspect_ratio: f32,
     models: Meshes,
@@ -48,8 +46,6 @@ impl RenderingLoop {
 
         RenderingLoop {
             window_size: window_locks.window_size(),
-            pressed_keys: window_locks.pressed_keys(),
-            mouse_delta: window_locks.mouse_delta(),
             context,
             window_aspect_ratio: INITIAL_SCREEN_W as f32 / INITIAL_SCREEN_H as f32,
             models,
@@ -87,7 +83,6 @@ impl RenderingLoop {
         // The main rendering loop
         let first_frame_time = std::time::Instant::now();
         let mut previous_frame_time = first_frame_time;
-        let mut frame: u32 = 0;
         loop {
             unsafe {
                 shader::ShaderBuilder::new()
@@ -123,8 +118,6 @@ impl RenderingLoop {
                 gl::Uniform1f(1, time);
             }
 
-            // Handle keyboard input
-
             let perspective_matrix: Mat4x4 =
                 glm::perspective(self.window_aspect_ratio, glm::half_pi(), 0.25, 100.0);
 
@@ -139,8 +132,6 @@ impl RenderingLoop {
                 gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
                 // == // Issue the necessary gl:: commands to draw your scene here
                 self.models.draw();
-                frame += 1;
-                print!("\rDraw #{}           ", frame);
             }
 
             // Display the new color buffer on the display

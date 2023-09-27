@@ -37,11 +37,6 @@ const INITIAL_SCREEN_W: u32 = 800;
 const INITIAL_SCREEN_H: u32 = 800;
 
 fn main() {
-    let x_axis: glm::Vec3 = glm::vec3(1.0, 0.0, 0.0);
-    let y_axis: glm::Vec3 = glm::vec3(0.0, 1.0, 0.0);
-    let z_axis: glm::Vec3 = glm::vec3(0.0, 0.0, 1.0);
-    let origin: glm::Vec3 = glm::vec3(0.0, 0.0, 0.0);
-    
     // Set up the necessary objects to deal with windows and event handling
     let mut event_loop = glutin::event_loop::EventLoop::new();
     let window_builder = glutin::window::WindowBuilder::new()
@@ -62,8 +57,8 @@ fn main() {
 
 
     let model_paths: Vec<String> = vec![
-        "./resources/lunarsurface.obj".to_string(),
-        //"./resources/helicopter.obj".to_string(),
+        //"./resources/lunarsurface.obj".to_string(),
+        "./resources/helicopter.obj".to_string(),
         //"./resources/cube.obj".to_string(),
     ];
     let mut models = Meshes::new();

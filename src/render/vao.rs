@@ -1,7 +1,5 @@
 use std::ptr;
 
-use tobj::Model;
-
 use crate::{byte_size_of_array, pointer_to_array};
 
 use super::mesh::Mesh;
