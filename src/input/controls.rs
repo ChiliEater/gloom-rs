@@ -13,7 +13,8 @@ use crate::render::window_locks::WindowLocks;
 
 const X_SENSITIVITY: f32 = 60.0;
 const Y_SENSITIVITY: f32 = 60.0;
-const MOVEMENT_SPEED: f32 = 2.0;
+const MOVEMENT_SPEED: f32 = 50.0;
+const SPRINT_MULTIPLIER: f32 = 10.0;
 
 pub struct Controls {
     position: Vec3,
@@ -78,7 +79,6 @@ impl Controls {
 
     fn handle_keyboard(&mut self, delta_time: f32, inverse_rotation_matrix: &Mat4x4) -> Mat4x4 {
         if let Ok(keys) = self.pressed_keys.lock() {
-            const SPRINT_MULTIPLIER: f32 = 4.0;
             let mut delta_speed = MOVEMENT_SPEED * delta_time;
             if keys.contains(&LShift) {
                 delta_speed *= SPRINT_MULTIPLIER;

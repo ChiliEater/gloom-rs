@@ -119,7 +119,7 @@ impl RenderingLoop {
             }
 
             let perspective_matrix: Mat4x4 =
-                glm::perspective(self.window_aspect_ratio, glm::half_pi(), 0.25, 100.0);
+                glm::perspective(self.window_aspect_ratio, glm::half_pi(), 0.25, 1000.0);
 
             unsafe {
                 let transform_matrix: Mat4x4 =

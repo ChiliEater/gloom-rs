@@ -56,8 +56,8 @@ fn main() {
 
 
     let model_paths: Vec<String> = vec![
-        //"./resources/lunarsurface.obj".to_string(),
-        "./resources/helicopter.obj".to_string(),
+        "./resources/lunarsurface.obj".to_string(),
+        //"./resources/helicopter.obj".to_string(),
         //"./resources/cube.obj".to_string(),
     ];
     let mut models = Meshes::new();

@@ -50,6 +50,8 @@ pub unsafe fn create_vao(mesh: &Mesh) -> u32 {
         gl::STATIC_DRAW,
     );
 
+
+    // Color buffer object
     let mut color_id: u32 = 0;
     gl::GenBuffers(1, &mut color_id);
 
@@ -65,6 +67,24 @@ pub unsafe fn create_vao(mesh: &Mesh) -> u32 {
     let color_attribute = 2;
     gl::VertexAttribPointer(color_attribute, 4, gl::FLOAT, gl::FALSE, 0, ptr::null());
     gl::EnableVertexAttribArray(color_attribute);
+
+
+    // Normals buffer object
+    let mut normal_id: u32 = 0;
+    gl::GenBuffers(1, &mut normal_id);
+
+    gl::BindBuffer(gl::ARRAY_BUFFER, normal_id);
+
+    gl::BufferData(
+        gl::ARRAY_BUFFER,
+        byte_size_of_array(&mesh.normals),
+        pointer_to_array(&mesh.normals),
+        gl::STATIC_DRAW,
+    );
+
+    let normal_attribute = 5;
+    gl::VertexAttribPointer(normal_attribute, 3, gl::FLOAT, gl::TRUE, 0, ptr::null());
+    gl::EnableVertexAttribArray(normal_attribute);
 
     vao_id
 }
