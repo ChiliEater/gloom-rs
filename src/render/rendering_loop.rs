@@ -3,8 +3,9 @@ use std::sync::{Arc, Mutex, RwLock};
 use std::thread::{self, JoinHandle};
 use std::{mem, os::raw::c_void, ptr};
 
+use crate::input::controls::Controls;
 use crate::{
-    create_vao, obj_parser, shader, util, INITIAL_SCREEN_H, INITIAL_SCREEN_W, MOVEMENT_SPEED,
+    create_vao, obj_parser, shader, util, INITIAL_SCREEN_H, INITIAL_SCREEN_W,
 };
 use glm::{pi, vec3, Mat4x4};
 use glutin::event::{
@@ -17,6 +18,7 @@ use glutin::event::{
 use glutin::event_loop::ControlFlow;
 use glutin::window::Window;
 use glutin::{ContextWrapper, NotCurrent, PossiblyCurrent};
+use tobj::Model;
 
 use super::window_locks::WindowLocks;
 
@@ -24,8 +26,11 @@ pub struct RenderingLoop {
     window_size: Arc<Mutex<(u32, u32, bool)>>,
     pressed_keys: Arc<Mutex<Vec<VirtualKeyCode>>>,
     mouse_delta: Arc<Mutex<(f32, f32)>>,
-    render_thread: Option<JoinHandle<()>>,
     context: ContextWrapper<PossiblyCurrent, Window>,
+    window_aspect_ratio: f32,
+    vaos: Vec<u32>,
+    models: Vec<Model>,
+    controls: Controls,
 }
 
 impl RenderingLoop {
@@ -47,41 +52,15 @@ impl RenderingLoop {
             pressed_keys: window_locks.pressed_keys(),
             mouse_delta: window_locks.mouse_delta(),
             context,
-            render_thread: None,
+            window_aspect_ratio: INITIAL_SCREEN_W as f32 / INITIAL_SCREEN_H as f32,
+            vaos: vec![],
+            models: vec![],
+            controls: Controls::new(window_locks),
         }
     }
 
     pub fn start(&mut self) {
-        let x_axis: glm::Vec3 = glm::vec3(1.0, 0.0, 0.0);
-        let y_axis: glm::Vec3 = glm::vec3(0.0, 1.0, 0.0);
-        let z_axis: glm::Vec3 = glm::vec3(0.0, 0.0, 1.0);
-        let origin: glm::Vec3 = glm::vec3(0.0, 0.0, 0.0);
-
-        let mut window_aspect_ratio = INITIAL_SCREEN_W as f32 / INITIAL_SCREEN_H as f32;
-
-        // Set up openGL
-        unsafe {
-            gl::Enable(gl::DEPTH_TEST);
-            gl::DepthFunc(gl::LESS);
-            gl::Enable(gl::CULL_FACE);
-            gl::Disable(gl::MULTISAMPLE);
-            gl::Enable(gl::BLEND);
-            gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
-            gl::Enable(gl::DEBUG_OUTPUT_SYNCHRONOUS);
-            gl::DebugMessageCallback(Some(util::debug_callback), ptr::null());
-
-            // Print some diagnostics
-            println!(
-                "{}: {}",
-                util::get_gl_string(gl::VENDOR),
-                util::get_gl_string(gl::RENDERER)
-            );
-            println!("OpenGL\t: {}", util::get_gl_string(gl::VERSION));
-            println!(
-                "GLSL\t: {}",
-                util::get_gl_string(gl::SHADING_LANGUAGE_VERSION)
-            );
-        }
+        configure_opengl();
 
         // == // Set up your VAO around here
         let model_paths: Vec<String> = vec![
@@ -154,10 +133,6 @@ impl RenderingLoop {
         let first_frame_time = std::time::Instant::now();
         let mut previous_frame_time = first_frame_time;
 
-        let mut camera_rotation: glm::Vec3 = glm::vec3(0.0, 0.0, 0.0);
-        let mut camera_position: glm::Vec3 = glm::vec3(0.0, 0.0, 2.0);
-        let mut sprint = false;
-
         loop {
             if rebuild_shaders {
                 unsafe {
@@ -179,9 +154,10 @@ impl RenderingLoop {
             // Handle resize events
             if let Ok(mut new_size) = self.window_size.lock() {
                 if new_size.2 {
-                    self.context.resize(glutin::dpi::PhysicalSize::new(new_size.0, new_size.1));
-                    window_aspect_ratio = new_size.0 as f32 / new_size.1 as f32;
-                    (*new_size).2 = false;
+                    self.context
+                        .resize(glutin::dpi::PhysicalSize::new(new_size.0, new_size.1));
+                    self.window_aspect_ratio = new_size.0 as f32 / new_size.1 as f32;
+                    new_size.2 = false;
                     println!("Window was resized to {}x{}", new_size.0, new_size.1);
                     unsafe {
                         gl::Viewport(0, 0, new_size.0 as i32, new_size.1 as i32);
@@ -198,84 +174,11 @@ impl RenderingLoop {
             // Handle keyboard input
 
             let perspective_matrix: Mat4x4 =
-                glm::perspective(window_aspect_ratio, glm::half_pi(), 0.25, 100.0);
-
-            // Handle mouse movement. delta contains the x and y movement of the mouse since last frame in pixels
-            if let Ok(mut delta) = self.mouse_delta.lock() {
-                const X_SENSITIVITY: f32 = 60.0;
-                const Y_SENSITIVITY: f32 = 60.0;
-                // == // Optionally access the accumulated mouse movement between
-                // == // frames here with `delta.0` and `delta.1`
-                if let Ok(screen) = self.window_size.lock() {
-                    camera_rotation += vec3(
-                        delta.1 / screen.1 as f32 * pi::<f32>() * delta_time * X_SENSITIVITY,
-                        delta.0 / screen.0 as f32 * pi::<f32>() * delta_time * Y_SENSITIVITY,
-                        0.0,
-                    );
-                }
-                *delta = (0.0, 0.0); // reset when done
-            }
-
-            camera_rotation.x = (glm::max(
-                &glm::min(&camera_rotation, glm::half_pi()),
-                -glm::half_pi::<f32>(),
-            ))
-            .x;
-
-            camera_rotation.y %= glm::two_pi::<f32>();
-
-            let inverse_rotation_matrix: Mat4x4 = glm::rotation(camera_rotation.x * -1.0, &x_axis)
-                * glm::rotation(camera_rotation.y * -1.0, &y_axis);
-
-            if let Ok(keys) = self.pressed_keys.lock() {
-                const SPRINT_MULTIPLIER: f32 = 4.0;
-                let mut delta_speed = MOVEMENT_SPEED * delta_time;
-                if keys.contains(&LShift) {
-                    delta_speed *= SPRINT_MULTIPLIER;
-                }
-                const X_SENSITIVITY: f32 = 7.0;
-                const Y_SENSITIVITY: f32 = 7.0;
-                for key in keys.iter() {
-                    match key {
-                        D | L => {
-                            camera_position += (inverse_rotation_matrix
-                                * (x_axis.to_homogeneous() * delta_speed))
-                                .xyz()
-                        }
-                        A | J => {
-                            camera_position -= (inverse_rotation_matrix
-                                * (x_axis.to_homogeneous() * delta_speed))
-                                .xyz()
-                        }
-                        Space => camera_position += y_axis * delta_speed,
-                        LControl => camera_position -= y_axis * delta_speed,
-                        S | K => {
-                            camera_position += (inverse_rotation_matrix
-                                * (z_axis.to_homogeneous() * delta_speed))
-                                .xyz()
-                        }
-                        W | I => {
-                            camera_position -= (inverse_rotation_matrix
-                                * (z_axis.to_homogeneous() * delta_speed))
-                                .xyz()
-                        }
-                        Left => camera_rotation.y -= Y_SENSITIVITY * delta_time,
-                        Right => camera_rotation.y += Y_SENSITIVITY * delta_time,
-                        Up => camera_rotation.x -= X_SENSITIVITY * delta_time,
-                        Down => camera_rotation.x += X_SENSITIVITY * delta_time,
-                        _ => {}
-                    }
-                }
-            }
-            let rotation_matrix: Mat4x4 = glm::rotation(camera_rotation.x, &x_axis)
-                * glm::rotation(camera_rotation.y, &y_axis);
+                glm::perspective(self.window_aspect_ratio, glm::half_pi(), 0.25, 100.0);
 
             unsafe {
-                // Calculate transformations
-                let translation_matrix: Mat4x4 = glm::translation(&(camera_position * -1.0));
-
                 let transform_matrix: Mat4x4 =
-                    perspective_matrix * rotation_matrix * translation_matrix;
+                    perspective_matrix * self.controls.handle(delta_time);
                 // == // Please compute camera transforms here (exercise 2 & 3)
 
                 gl::UniformMatrix4fv(3, 1, gl::FALSE, transform_matrix.as_ptr());
@@ -313,5 +216,31 @@ impl RenderingLoop {
             .set_cursor_grab(glutin::window::CursorGrabMode::None)
             .expect("failed to grab cursor");
         self.context.window().set_cursor_visible(true);
+    }
+}
+
+fn configure_opengl() {
+    // Set up openGL
+    unsafe {
+        gl::Enable(gl::DEPTH_TEST);
+        gl::DepthFunc(gl::LESS);
+        gl::Enable(gl::CULL_FACE);
+        gl::Disable(gl::MULTISAMPLE);
+        gl::Enable(gl::BLEND);
+        gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
+        gl::Enable(gl::DEBUG_OUTPUT_SYNCHRONOUS);
+        gl::DebugMessageCallback(Some(util::debug_callback), ptr::null());
+
+        // Print some diagnostics
+        println!(
+            "{}: {}",
+            util::get_gl_string(gl::VENDOR),
+            util::get_gl_string(gl::RENDERER)
+        );
+        println!("OpenGL\t: {}", util::get_gl_string(gl::VERSION));
+        println!(
+            "GLSL\t: {}",
+            util::get_gl_string(gl::SHADING_LANGUAGE_VERSION)
+        );
     }
 }

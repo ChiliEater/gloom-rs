@@ -34,7 +34,6 @@ use glutin::event_loop::ControlFlow;
 // initial window size
 const INITIAL_SCREEN_W: u32 = 800;
 const INITIAL_SCREEN_H: u32 = 800;
-const MOVEMENT_SPEED: f32 = 2.0;
 
 fn main() {
     let x_axis: glm::Vec3 = glm::vec3(1.0, 0.0, 0.0);
