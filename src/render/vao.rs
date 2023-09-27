@@ -32,7 +32,7 @@ pub unsafe fn create_vao(mesh: &Mesh) -> u32 {
 
     // Setup VAP (clean this up?)
     let attribute_index = 0;
-    gl::VertexAttribPointer(attribute_index, 4, gl::FLOAT, gl::FALSE, 0, ptr::null());
+    gl::VertexAttribPointer(attribute_index, 3, gl::FLOAT, gl::FALSE, 0, ptr::null());
 
     // Enable VBO
     gl::EnableVertexAttribArray(attribute_index);
