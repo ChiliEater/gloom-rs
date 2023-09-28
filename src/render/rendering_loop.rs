@@ -119,7 +119,7 @@ impl RenderingLoop {
             }
 
             let perspective_matrix: Mat4x4 =
-                glm::perspective(self.window_aspect_ratio, glm::half_pi(), 0.25, 1000.0);
+                glm::perspective(self.window_aspect_ratio, glm::half_pi(), 0.25, 2000.0);
 
             unsafe {
                 let transform_matrix: Mat4x4 =
@@ -127,8 +127,8 @@ impl RenderingLoop {
 
                 gl::UniformMatrix4fv(3, 1, gl::FALSE, transform_matrix.as_ptr());
                 // Clear the color and depth buffers
-                gl::ClearColor(0.035, 0.046, 0.078, 1.0); // night sky, full opacity
-                                                          //gl::ClearColor(1.0, 1.0, 1.0, 1.0); // white background, full opacity
+                //gl::ClearColor(0.035, 0.046, 0.078, 1.0); // night sky, full opacity
+                gl::ClearColor(0.0078, 0.302, 0.251,1.0);
                 gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
                 // == // Issue the necessary gl:: commands to draw your scene here
                 self.models.draw();
