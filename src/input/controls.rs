@@ -7,7 +7,7 @@ use glutin::event::{
     VirtualKeyCode::{self, *},
     WindowEvent,
 };
-use nalgebra_glm::{vec3, Mat3x3, Mat4x4, Vec3, Vec4, pi};
+use nalgebra_glm::{pi, vec3, Mat3x3, Mat4x4, Vec3, Vec4};
 
 use crate::render::window_locks::WindowLocks;
 
@@ -44,9 +44,10 @@ impl Controls {
     }
 
     pub fn handle(&mut self, delta_time: f32) -> Mat4x4 {
-        let inverse_rotation = self.handle_mouse(delta_time);
-        let translation = self.handle_keyboard(delta_time, &inverse_rotation);
-        let rotation: Mat4x4 = glm::rotation(self.rotation.x, &self.x_axis)* glm::rotation(self.rotation.y, &self.y_axis);
+        let negative_rotation = self.handle_mouse(delta_time);
+        let translation = self.handle_keyboard(delta_time, &negative_rotation);
+        let rotation: Mat4x4 = glm::rotation(self.rotation.x, &self.x_axis)
+            * glm::rotation(self.rotation.y, &self.y_axis);
         rotation * translation
     }
 
@@ -66,18 +67,18 @@ impl Controls {
         }
 
         self.rotation.x = (glm::max(
-            &glm::min(&self.rotation, glm::half_pi()),
-            -glm::half_pi::<f32>(),
+            &glm::min(&self.rotation, glm::half_pi::<f32>() - 0.1),
+            -glm::half_pi::<f32>() + 0.1,
         ))
         .x;
-
         self.rotation.y %= glm::two_pi::<f32>();
 
+        glm::rotation(self.rotation.z * -1.0, &self.z_axis) *
+        glm::rotation(self.rotation.y * -1.0, &self.y_axis) *
         glm::rotation(self.rotation.x * -1.0, &self.x_axis)
-            * glm::rotation(self.rotation.y * -1.0, &self.y_axis)
     }
 
-    fn handle_keyboard(&mut self, delta_time: f32, inverse_rotation_matrix: &Mat4x4) -> Mat4x4 {
+    fn handle_keyboard(&mut self, delta_time: f32, negative_rotation_matrix: &Mat4x4) -> Mat4x4 {
         if let Ok(keys) = self.pressed_keys.lock() {
             let mut delta_speed = MOVEMENT_SPEED * delta_time;
             if keys.contains(&LShift) {
@@ -88,27 +89,41 @@ impl Controls {
             for key in keys.iter() {
                 match key {
                     D | L => {
-                        self.position += (inverse_rotation_matrix
+                        self.position += (negative_rotation_matrix
                             * (self.x_axis.to_homogeneous() * delta_speed))
                             .xyz()
                     }
                     A | J => {
-                        self.position -= (inverse_rotation_matrix
+                        self.position -= (negative_rotation_matrix
                             * (self.x_axis.to_homogeneous() * delta_speed))
                             .xyz()
                     }
-                    Space => self.position += self.y_axis * delta_speed,
-                    LControl => self.position -= self.y_axis * delta_speed,
                     S | K => {
-                        self.position += (inverse_rotation_matrix
+                        self.position += (negative_rotation_matrix
                             * (self.z_axis.to_homogeneous() * delta_speed))
                             .xyz()
                     }
                     W | I => {
-                        self.position -= (inverse_rotation_matrix
+                        self.position -= (negative_rotation_matrix
                             * (self.z_axis.to_homogeneous() * delta_speed))
                             .xyz()
                     }
+                    /*
+                    D | L => {
+                        self.position += self.x_axis * delta_speed;
+                    }
+                    A | J => {
+                        self.position -= self.x_axis * delta_speed;
+                    }
+                    S | K => {
+                        self.position += self.z_axis * delta_speed;
+                    }
+                    W | I => {
+                        self.position -= self.z_axis * delta_speed;
+                    }
+                    */
+                    Space => self.position += self.y_axis * delta_speed,
+                    LControl => self.position -= self.y_axis * delta_speed,
                     Left => self.rotation.y -= Y_SENSITIVITY * delta_time,
                     Right => self.rotation.y += Y_SENSITIVITY * delta_time,
                     Up => self.rotation.x -= X_SENSITIVITY * delta_time,
