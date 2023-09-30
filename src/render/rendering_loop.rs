@@ -67,11 +67,11 @@ impl RenderingLoop {
         self.meshes.generate_vaos();
 
         let mut root_node = self.setup_scene();
-        let terrain = root_node.get_child(0);
-        let helicopter = root_node.get_child(1);
-        let heli_main_rotor = helicopter.get_child(0);
-        let heli_tail_rotor = helicopter.get_child(1);
-        let heli_door = helicopter.get_child(2);
+        let terrain: &mut SceneNode = root_node.get_child(0);
+        let helicopter: &mut SceneNode = root_node.get_child(1);
+        let heli_main_rotor: &mut SceneNode = helicopter.get_child(0);
+        let heli_tail_rotor: &mut SceneNode = helicopter.get_child(1);
+        let heli_door: &mut SceneNode = helicopter.get_child(2);
 
         // == // Set up your shaders here
         let fragment_shaders: Vec<String> = vec![
@@ -221,7 +221,7 @@ impl RenderingLoop {
         );
         // Try some transformations on helicopter
         helicopter_body_node.scale = vec3(1.0, 1.0, 1.0) * 10.0;
-        helicopter_body_node.position = vec3(0.0, 10.0, 0.0);
+        helicopter_body_node.position = vec3(0.0, 10.0, -20.0);
 
         // Add helicopter as a child of root.
         root_node.add_child(&helicopter_body_node);
@@ -234,8 +234,8 @@ impl RenderingLoop {
             ));
         }
 
-        helicopter_body_node.get_child(1).rotation = vec3(half_pi(),0.0,0.0);
-        helicopter_body_node.get_child(1).reference_point = vec3(0.35,2.3,10.5);
+        helicopter_body_node.get_child(1).reference_point = vec3(0.35,2.3,10.5)*1.0;
+        helicopter_body_node.get_child(1).rotation = vec3(0.0,0.0,0.0);
         root_node
     }
 
@@ -245,9 +245,10 @@ impl RenderingLoop {
         view_projection_matrix: &Mat4x4,
         transformation_so_far: &Mat4x4,
     ) {
-        let new_matrix = 
-        rotate_around(&node.rotation, &node.reference_point) 
-        * scale_around(&node.scale, &node.reference_point) 
+        let new_reference_point = (transformation_so_far*glm::vec4(node.reference_point.x,node.reference_point.y,node.reference_point.z,1.0)).xyz();
+        let new_matrix =
+        rotate_around(&node.rotation, &new_reference_point)
+        * scale_around(&node.scale, &new_reference_point) 
         * glm::translation(&node.position)
         * transformation_so_far
         ;
@@ -263,9 +264,10 @@ impl RenderingLoop {
         view_projection_matrix: &Mat4x4,
         transformation_so_far: &Mat4x4,
     ) {
-        let new_matrix = 
-        rotate_around(&node.rotation, &node.reference_point) 
-        * scale_around(&node.scale, &node.reference_point) 
+        let new_reference_point = (transformation_so_far*glm::vec4(node.reference_point.x,node.reference_point.y,node.reference_point.z,1.0)).xyz();
+        let new_matrix =
+        rotate_around(&node.rotation, &new_reference_point)
+        * scale_around(&node.scale, &new_reference_point) 
         * glm::translation(&node.position)
         * transformation_so_far
         ;

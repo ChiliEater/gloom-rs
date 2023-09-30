@@ -50,6 +50,7 @@ pub fn rotate_all(angles: &Vec3) -> Mat4x4 {
 
 pub fn rotate_around(angles: &Vec3, point: &Vec3) -> Mat4x4 {
     glm::translation(&(point)) * rotate_all(angles) * glm::translation(&(-point))
+    //rotate_all(angles)
 }
 
 pub fn scale_around(factors: &Vec3, point: &Vec3) -> Mat4x4 {
