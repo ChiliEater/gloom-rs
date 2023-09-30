@@ -4,8 +4,10 @@ use std::thread::{self, JoinHandle};
 use std::{mem, os::raw::c_void, ptr};
 
 use crate::input::controls::Controls;
+use crate::shader::Shader;
+use crate::toolbox::{rotate_all, scale_around, rotate_around};
 use crate::{shader, util, INITIAL_SCREEN_H, INITIAL_SCREEN_W};
-use glm::{pi, vec3, Mat4x4};
+use glm::{pi, vec3, Mat4x4, half_pi, cos};
 use glutin::event::{
     DeviceEvent,
     ElementState::{Pressed, Released},
@@ -18,22 +20,29 @@ use glutin::window::Window;
 use glutin::{ContextWrapper, NotCurrent, PossiblyCurrent};
 use tobj::Model;
 
+use super::mesh::{Helicopter, Terrain};
 use super::meshes::Meshes;
+use super::scene_graph::{self, Node, SceneNode};
+use super::vao::create_vao;
 use super::window_locks::WindowLocks;
+
+const TERRAIN: &str = "./resources/lunarsurface.obj";
+const HELICOPTER: &str = "./resources/helicopter.obj";
+const COLORCUBE: &str = "./resources/cube.obj";
 
 pub struct RenderingLoop {
     window_size: Arc<Mutex<(u32, u32, bool)>>,
     context: ContextWrapper<PossiblyCurrent, Window>,
     window_aspect_ratio: f32,
-    models: Meshes,
+    meshes: Meshes,
     controls: Controls,
+    shader: Option<Shader>,
 }
 
 impl RenderingLoop {
     pub fn new(
         window_locks: &WindowLocks,
         window_context: ContextWrapper<NotCurrent, Window>,
-        models: Meshes,
     ) -> RenderingLoop {
         // Acquire the OpenGL Context and load the function pointers.
         // This has to be done inside of the rendering thread, because
@@ -48,14 +57,21 @@ impl RenderingLoop {
             window_size: window_locks.window_size(),
             context,
             window_aspect_ratio: INITIAL_SCREEN_W as f32 / INITIAL_SCREEN_H as f32,
-            models,
+            meshes: Meshes::new(),
             controls: Controls::new(window_locks),
+            shader: None,
         }
     }
-
     pub fn start(&mut self) {
         self.configure_opengl();
-        self.models.generate_vaos();
+        self.meshes.generate_vaos();
+
+        let mut root_node = self.setup_scene();
+        let terrain = root_node.get_child(0);
+        let helicopter = root_node.get_child(1);
+        let heli_main_rotor = helicopter.get_child(0);
+        let heli_tail_rotor = helicopter.get_child(1);
+        let heli_door = helicopter.get_child(2);
 
         // == // Set up your shaders here
         let fragment_shaders: Vec<String> = vec![
@@ -80,23 +96,27 @@ impl RenderingLoop {
         let mut time: f32 = 0.0;
         let delta_t: f32 = 0.1; // amount to increase the time at each iteration
 
+        self.shader = Some(unsafe {
+            shader::ShaderBuilder::new()
+                .attach_file(fragment_shaders[0].as_str())
+                .attach_file(vertex_shaders[0].as_str())
+                .link()
+        });
+        unsafe { self.shader.as_mut().unwrap().activate() };
+
         // The main rendering loop
         let first_frame_time = std::time::Instant::now();
         let mut previous_frame_time = first_frame_time;
         loop {
-            unsafe {
-                shader::ShaderBuilder::new()
-                    .attach_file(fragment_shaders[0].as_str())
-                    .attach_file(vertex_shaders[0].as_str())
-                    .link()
-                    .activate();
-            }
 
             // Compute time passed since the previous frame and since the start of the program
             let now = std::time::Instant::now();
             let elapsed = now.duration_since(first_frame_time).as_secs_f32();
             let delta_time = now.duration_since(previous_frame_time).as_secs_f32();
             previous_frame_time = now;
+            
+            // CURSED HELICOPTER
+            //heli_tail_rotor.rotation = vec3(elapsed,0.0,0.0); 
 
             // Handle resize events
             if let Ok(mut new_size) = self.window_size.lock() {
@@ -122,16 +142,17 @@ impl RenderingLoop {
                 glm::perspective(self.window_aspect_ratio, glm::half_pi(), 0.25, 2000.0);
 
             unsafe {
-                let transform_matrix: Mat4x4 =
-                    perspective_matrix * self.controls.handle(delta_time);
-
-                gl::UniformMatrix4fv(3, 1, gl::FALSE, transform_matrix.as_ptr());
                 // Clear the color and depth buffers
                 //gl::ClearColor(0.035, 0.046, 0.078, 1.0); // night sky, full opacity
-                gl::ClearColor(0.0078, 0.302, 0.251,1.0);
+                gl::ClearColor(0.0078, 0.302, 0.251, 1.0);
                 gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
                 // == // Issue the necessary gl:: commands to draw your scene here
-                self.models.draw();
+                let movement = self.controls.handle(delta_time);
+                self.draw_scene_initial(
+                    &root_node,
+                    &(perspective_matrix * movement),
+                    &glm::identity(),
+                );
             }
 
             // Display the new color buffer on the display
@@ -178,6 +199,103 @@ impl RenderingLoop {
                 "GLSL\t: {}",
                 util::get_gl_string(gl::SHADING_LANGUAGE_VERSION)
             );
+        }
+    }
+
+    fn setup_scene(&self) -> Node {
+        let helicopter_mesh = Helicopter::load(HELICOPTER);
+        let terrain_mesh = Terrain::load(TERRAIN);
+
+        let mut root_node: Node = SceneNode::new();
+
+        // Add terrain as a child of root.
+        root_node.add_child(&SceneNode::from_vao(
+            unsafe { create_vao(&terrain_mesh) },
+            terrain_mesh.index_count,
+        ));
+
+        // Add helicopter body
+        let mut helicopter_body_node = SceneNode::from_vao(
+            unsafe { create_vao(&helicopter_mesh.body) },
+            helicopter_mesh.body.index_count,
+        );
+        // Try some transformations on helicopter
+        helicopter_body_node.scale = vec3(1.0, 1.0, 1.0) * 10.0;
+        helicopter_body_node.position = vec3(0.0, 10.0, 0.0);
+
+        // Add helicopter as a child of root.
+        root_node.add_child(&helicopter_body_node);
+
+        // Add the rest of helicopter parts as children of body
+        for i in 1..4 {
+            helicopter_body_node.add_child(&SceneNode::from_vao(
+                unsafe { create_vao(&helicopter_mesh[i]) },
+                helicopter_mesh[i].index_count,
+            ));
+        }
+
+        helicopter_body_node.get_child(1).rotation = vec3(half_pi(),0.0,0.0);
+        helicopter_body_node.get_child(1).reference_point = vec3(0.35,2.3,10.5);
+        root_node
+    }
+
+    unsafe fn draw_scene_initial(
+        &self,
+        node: &Node,
+        view_projection_matrix: &Mat4x4,
+        transformation_so_far: &Mat4x4,
+    ) {
+        let new_matrix = 
+        rotate_around(&node.rotation, &node.reference_point) 
+        * scale_around(&node.scale, &node.reference_point) 
+        * glm::translation(&node.position)
+        * transformation_so_far
+        ;
+
+        for &child in &node.children {
+            self.draw_scene(&*child, view_projection_matrix, &new_matrix);
+        }
+    }
+
+    unsafe fn draw_scene(
+        &self,
+        node: &scene_graph::SceneNode,
+        view_projection_matrix: &Mat4x4,
+        transformation_so_far: &Mat4x4,
+    ) {
+        let new_matrix = 
+        rotate_around(&node.rotation, &node.reference_point) 
+        * scale_around(&node.scale, &node.reference_point) 
+        * glm::translation(&node.position)
+        * transformation_so_far
+        ;
+
+        if node.index_count > 0 {
+
+            gl::BindVertexArray(node.vao_id);
+            match &self.shader {
+                Some(shader) => {
+                    let position_uniform = shader.get_uniform_location("transform");
+                    gl::UniformMatrix4fv(
+                        position_uniform,
+                        1,
+                        gl::FALSE,
+                        (view_projection_matrix * new_matrix).as_ptr(),
+                    );
+                }
+                None => {}
+            }
+
+            gl::DrawElements(
+                gl::TRIANGLES,
+                node.index_count,
+                gl::UNSIGNED_INT,
+                ptr::null(),
+            );
+        }
+
+        for &child in &node.children {
+            self.draw_scene(&*child, view_projection_matrix, &new_matrix);
         }
     }
 }

@@ -19,11 +19,15 @@ impl Mesh {
     pub fn from(mesh: tobj::Mesh, color: [f32; 4]) -> Self {
         let num_verts = mesh.positions.len() / 3;
         let index_count = mesh.indices.len() as i32;
+        let mut colors = mesh.vertex_color;
+        if colors.is_empty() {
+            colors = generate_color_vec(color, num_verts);
+        }
         Mesh {
             vertices: mesh.positions,
             normals: mesh.normals,
             indices: mesh.indices,
-            colors: generate_color_vec(color, num_verts),
+            colors,
             index_count,
         }
     }

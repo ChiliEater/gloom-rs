@@ -88,3 +88,7 @@ void main()
 We end up with the following result:
 
 ![Smooth shading on the moon.](img/moon_shading.png)
+
+# Task 2
+
+![](img/helicopter_scene.png)

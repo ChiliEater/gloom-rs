@@ -9,8 +9,10 @@
 */
 extern crate nalgebra_glm as glm;
 use input::input_loop::{self, InputLoop};
+use render::mesh::Helicopter;
 use render::meshes::Meshes;
 use render::rendering_loop::RenderingLoop;
+use render::scene_graph::SceneNode;
 use render::window_locks::{self, WindowLocks};
 use std::sync::{Arc, Mutex, RwLock};
 use std::thread::{self, JoinHandle};
@@ -20,6 +22,7 @@ mod input;
 mod render;
 mod shader;
 mod util;
+mod toolbox;
 
 use glm::{pi, vec3, Mat4x4};
 use glutin::event::{
@@ -53,19 +56,10 @@ fn main() {
     let arc_window_locks = Arc::new(window_locks);
     let window_locks_render = Arc::clone(&arc_window_locks);
     let window_locks_input = Arc::clone(&arc_window_locks);
-
-
-    let model_paths: Vec<String> = vec![
-        "./resources/lunarsurface.obj".to_string(),
-        //"./resources/helicopter.obj".to_string(),
-        //"./resources/cube.obj".to_string(),
-    ];
-    let mut models = Meshes::new();
-    models.add_all(&model_paths);
-
+    
     // Spawn render thread
     let render_thread = thread::spawn(move || {
-        let mut rendering_loop = RenderingLoop::new(&window_locks_render, window_context, models);
+        let mut rendering_loop = RenderingLoop::new(&window_locks_render, window_context);
         rendering_loop.enable_mouse_input();
         rendering_loop.start();
     });

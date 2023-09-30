@@ -64,17 +64,4 @@ impl Meshes {
         }
     }
 
-    pub fn draw(&self) {
-        for i in 0..self.meshes.len() {
-            unsafe {
-                gl::BindVertexArray(self.vaos[i]);
-                gl::DrawElements(
-                    gl::TRIANGLES,
-                    self.meshes[i].index_count,
-                    gl::UNSIGNED_INT,
-                    ptr::null(),
-                )
-            }
-        }
-    }
 }
