@@ -104,3 +104,7 @@ We end up with the following result:
 ![](img/5-helis.png)
 
 ![](img/100-helis.png)
+
+# Task 6
+
+![](img/londong.png)
