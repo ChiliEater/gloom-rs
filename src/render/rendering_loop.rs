@@ -1,4 +1,5 @@
 extern crate nalgebra_glm as glm;
+use std::pin::Pin;
 use std::sync::{Arc, Mutex, RwLock};
 use std::thread::{self, JoinHandle};
 use std::{mem, os::raw::c_void, ptr};
@@ -65,13 +66,13 @@ impl RenderingLoop {
     pub fn start(&mut self) {
         self.configure_opengl();
         self.meshes.generate_vaos();
-
-        let mut root_node = self.setup_scene();
-        let terrain: &mut SceneNode = root_node.get_child(0);
-        let helicopter: &mut SceneNode = root_node.get_child(1);
-        let heli_main_rotor: &mut SceneNode = helicopter.get_child(0);
-        let heli_tail_rotor: &mut SceneNode = helicopter.get_child(1);
-        let heli_door: &mut SceneNode = helicopter.get_child(2);
+        let mut binding = self.setup_scene();
+        let mut root_node = binding.as_mut();
+        //let terrain: &mut SceneNode = root_node.get_child(0);
+        //let helicopter: &mut SceneNode = root_node.get_child(1);
+        //let heli_main_rotor: &mut SceneNode = helicopter.get_child(0);
+        //let heli_tail_rotor: &mut SceneNode = helicopter.get_child(1);
+        //let heli_door: &mut SceneNode = helicopter.get_child(2);
 
         // == // Set up your shaders here
         let fragment_shaders: Vec<String> = vec![
@@ -116,7 +117,7 @@ impl RenderingLoop {
             previous_frame_time = now;
             
             // CURSED HELICOPTER
-            //heli_tail_rotor.rotation = vec3(elapsed,0.0,0.0); 
+            root_node.get_child(1).get_child(1).rotation = vec3(elapsed,0.0,0.0); 
 
             // Handle resize events
             if let Ok(mut new_size) = self.window_size.lock() {
@@ -241,7 +242,7 @@ impl RenderingLoop {
 
     unsafe fn draw_scene_initial(
         &self,
-        node: &Node,
+        node: &SceneNode,
         view_projection_matrix: &Mat4x4,
         transformation_so_far: &Mat4x4,
     ) {
