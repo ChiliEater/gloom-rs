@@ -6,9 +6,11 @@ use std::{mem, os::raw::c_void, ptr};
 
 use crate::input::controls::Controls;
 use crate::shader::Shader;
-use crate::toolbox::{rotate_all, scale_around, rotate_around};
+use crate::toolbox::{
+    rotate_all, rotate_around, scale_around, simple_heading_animation, to_homogeneous,
+};
 use crate::{shader, util, INITIAL_SCREEN_H, INITIAL_SCREEN_W};
-use glm::{pi, vec3, Mat4x4, half_pi, cos};
+use glm::{cos, half_pi, pi, sin, vec3, Mat4x4};
 use glutin::event::{
     DeviceEvent,
     ElementState::{Pressed, Released},
@@ -30,6 +32,7 @@ use super::window_locks::WindowLocks;
 const TERRAIN: &str = "./resources/lunarsurface.obj";
 const HELICOPTER: &str = "./resources/helicopter.obj";
 const COLORCUBE: &str = "./resources/cube.obj";
+const HELI_COUNT: u32 = 5;
 
 pub struct RenderingLoop {
     window_size: Arc<Mutex<(u32, u32, bool)>>,
@@ -109,15 +112,14 @@ impl RenderingLoop {
         let first_frame_time = std::time::Instant::now();
         let mut previous_frame_time = first_frame_time;
         loop {
-
             // Compute time passed since the previous frame and since the start of the program
             let now = std::time::Instant::now();
             let elapsed = now.duration_since(first_frame_time).as_secs_f32();
             let delta_time = now.duration_since(previous_frame_time).as_secs_f32();
             previous_frame_time = now;
+
+            //helicopter_animation(elapsed, &mut root_node);
             
-            // CURSED HELICOPTER
-            root_node.get_child(1).get_child(1).rotation = vec3(elapsed,0.0,0.0); 
 
             // Handle resize events
             if let Ok(mut new_size) = self.window_size.lock() {
@@ -144,6 +146,21 @@ impl RenderingLoop {
 
             unsafe {
                 // Clear the color and depth buffers
+                match &self.shader {
+                    Some(shader) => {
+                        let mut uniform;
+                        uniform = shader.get_uniform_location("camera_position");
+                        let camera_position = self.controls.get_position();
+                        gl::Uniform4f(
+                            uniform,
+                            camera_position.x,
+                            camera_position.y,
+                            camera_position.z,
+                            1.0,
+                        );
+                    }
+                    None => {}
+                }
                 //gl::ClearColor(0.035, 0.046, 0.078, 1.0); // night sky, full opacity
                 gl::ClearColor(0.0078, 0.302, 0.251, 1.0);
                 gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
@@ -215,28 +232,36 @@ impl RenderingLoop {
             terrain_mesh.index_count,
         ));
 
-        // Add helicopter body
-        let mut helicopter_body_node = SceneNode::from_vao(
-            unsafe { create_vao(&helicopter_mesh.body) },
-            helicopter_mesh.body.index_count,
-        );
-        // Try some transformations on helicopter
-        helicopter_body_node.scale = vec3(1.0, 1.0, 1.0) * 10.0;
-        helicopter_body_node.position = vec3(0.0, 10.0, -20.0);
+        let heli_vao = unsafe { create_vao(&helicopter_mesh.body) };
+        let heli_parts_vaos: Vec<u32> = vec![
+            unsafe { create_vao(&helicopter_mesh.main_rotor) },
+            unsafe { create_vao(&helicopter_mesh.tail_rotor) },
+            unsafe { create_vao(&helicopter_mesh.door) },
+        ];
+        for j in 0..HELI_COUNT {
+            // Add helicopter body
+            let mut helicopter_body_node =
+                SceneNode::from_vao(heli_vao, helicopter_mesh.body.index_count);
+            // Try some transformations on helicopter
+            helicopter_body_node.scale = vec3(1.0, 1.0, 1.0) * 1.0;
+            helicopter_body_node.position = vec3(0.0, 20.0, -20.0);
+            helicopter_body_node.reference_point = vec3(0.0, 20.0, -20.0);
 
-        // Add helicopter as a child of root.
-        root_node.add_child(&helicopter_body_node);
+            // Add helicopter as a child of root.
+            root_node.add_child(&helicopter_body_node);
 
-        // Add the rest of helicopter parts as children of body
-        for i in 1..4 {
-            helicopter_body_node.add_child(&SceneNode::from_vao(
-                unsafe { create_vao(&helicopter_mesh[i]) },
-                helicopter_mesh[i].index_count,
-            ));
+            // Add the rest of helicopter parts as children of body
+            for i in 0..3 {
+                helicopter_body_node.add_child(&SceneNode::from_vao(
+                    heli_parts_vaos[i],
+                    helicopter_mesh[i + 1].index_count,
+                ));
+            }
+
+            helicopter_body_node.get_child(1).reference_point = vec3(0.35, 2.3, 10.40) * 1.0;
+            helicopter_body_node.get_child(1).rotation = vec3(pi(), 0.0, 0.0);
         }
 
-        helicopter_body_node.get_child(1).reference_point = vec3(0.35,2.3,10.5)*1.0;
-        helicopter_body_node.get_child(1).rotation = vec3(0.0,0.0,0.0);
         root_node
     }
 
@@ -246,13 +271,10 @@ impl RenderingLoop {
         view_projection_matrix: &Mat4x4,
         transformation_so_far: &Mat4x4,
     ) {
-        let new_reference_point = (transformation_so_far*glm::vec4(node.reference_point.x,node.reference_point.y,node.reference_point.z,1.0)).xyz();
-        let new_matrix =
-        rotate_around(&node.rotation, &new_reference_point)
-        * scale_around(&node.scale, &new_reference_point) 
-        * glm::translation(&node.position)
-        * transformation_so_far
-        ;
+        let new_matrix = transformation_so_far
+            * rotate_around(&node.rotation, &node.reference_point)
+            * scale_around(&node.scale, &node.reference_point)
+            * glm::translation(&node.position);
 
         for &child in &node.children {
             self.draw_scene(&*child, view_projection_matrix, &new_matrix);
@@ -265,25 +287,23 @@ impl RenderingLoop {
         view_projection_matrix: &Mat4x4,
         transformation_so_far: &Mat4x4,
     ) {
-        let new_reference_point = (transformation_so_far*glm::vec4(node.reference_point.x,node.reference_point.y,node.reference_point.z,1.0)).xyz();
-        let new_matrix =
-        rotate_around(&node.rotation, &new_reference_point)
-        * scale_around(&node.scale, &new_reference_point) 
-        * glm::translation(&node.position)
-        * transformation_so_far
-        ;
+        let new_matrix = transformation_so_far
+            * rotate_around(&node.rotation, &node.reference_point)
+            * scale_around(&node.scale, &node.reference_point)
+            * glm::translation(&node.position);
 
         if node.index_count > 0 {
-
             gl::BindVertexArray(node.vao_id);
             match &self.shader {
                 Some(shader) => {
-                    let position_uniform = shader.get_uniform_location("transform");
+                    let transform_uniform = shader.get_uniform_location("transform");
+                    gl::UniformMatrix4fv(transform_uniform, 1, gl::FALSE, new_matrix.as_ptr());
+                    let view_uniform = shader.get_uniform_location("view_projection");
                     gl::UniformMatrix4fv(
-                        position_uniform,
+                        view_uniform,
                         1,
                         gl::FALSE,
-                        (view_projection_matrix * new_matrix).as_ptr(),
+                        view_projection_matrix.as_ptr(),
                     );
                 }
                 None => {}
@@ -300,5 +320,27 @@ impl RenderingLoop {
         for &child in &node.children {
             self.draw_scene(&*child, view_projection_matrix, &new_matrix);
         }
+    }
+}
+
+fn helicopter_animation(elapsed: f32, root_node: &mut Pin<&mut SceneNode>) {
+    for i in 1..HELI_COUNT + 1 {
+        let heading = simple_heading_animation(elapsed + i as f32 * 5.0);
+        root_node.get_child(i as usize).position =
+            vec3(heading.x, root_node.get_child(1).position.y, heading.z);
+        root_node.get_child(i as usize).reference_point =
+            vec3(heading.x, root_node.get_child(1).position.y, heading.z);
+        root_node.get_child(i as usize).rotation =
+            vec3(heading.pitch, heading.yaw, heading.roll);
+
+        // ROTATE
+        //root_node.get_child(1).rotation = self.controls.get_position();
+        //root_node.get_child(0).rotation = vec3(0.0, 0.0,elapsed.sin());
+
+        // rotate rotors
+        root_node.get_child(i as usize).get_child(1).rotation =
+            vec3(elapsed * 30.0, 0.0, 0.0);
+        root_node.get_child(i as usize).get_child(0).rotation =
+            vec3(0.0, elapsed * 30.0, 0.0);
     }
 }

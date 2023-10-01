@@ -9,6 +9,7 @@ use glutin::event::{
 };
 use nalgebra_glm::{pi, vec3, Mat3x3, Mat4x4, Vec3, Vec4};
 
+use crate::toolbox::{rotate_all, rotate_around, scale_around, to_homogeneous};
 use crate::render::window_locks::WindowLocks;
 
 const X_SENSITIVITY: f32 = 60.0;
@@ -90,22 +91,22 @@ impl Controls {
                 match key {
                     D | L => {
                         self.position += (negative_rotation_matrix
-                            * (self.x_axis.to_homogeneous() * delta_speed))
+                            * (to_homogeneous(&self.x_axis) * delta_speed))
                             .xyz()
                     }
                     A | J => {
                         self.position -= (negative_rotation_matrix
-                            * (self.x_axis.to_homogeneous() * delta_speed))
+                            * (to_homogeneous(&self.x_axis) * delta_speed))
                             .xyz()
                     }
                     S | K => {
                         self.position += (negative_rotation_matrix
-                            * (self.z_axis.to_homogeneous() * delta_speed))
+                            * (to_homogeneous(&self.z_axis) * delta_speed))
                             .xyz()
                     }
                     W | I => {
                         self.position -= (negative_rotation_matrix
-                            * (self.z_axis.to_homogeneous() * delta_speed))
+                            * (to_homogeneous(&self.z_axis) * delta_speed))
                             .xyz()
                     }
                     /*
@@ -133,5 +134,9 @@ impl Controls {
             }
         }
         glm::translation(&(self.position * -1.0))
+    }
+
+    pub fn get_position(&self) -> Vec3 {
+        self.position.clone()
     }
 }

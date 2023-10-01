@@ -92,3 +92,15 @@ We end up with the following result:
 # Task 2
 
 ![](img/helicopter_scene.png)
+
+# Task 4
+
+![](img/heli-good.png)
+
+![](img/heli-wrong.png)
+
+# Task 5
+
+![](img/5-helis.png)
+
+![](img/100-helis.png)
