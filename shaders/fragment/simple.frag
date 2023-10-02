@@ -36,7 +36,7 @@ void main()
     // Light color and position (rotating Sun)
     vec4 light_pos =   500 * vec4(2*cos(time/10.0), sin(time/10.0),-1,1.0);
     //vec4 light_pos = camera_position;
-    vec3 light_color = vec3(0.7804, 0.0588, 0.6706);
+    vec3 light_color = vec3(0.0588, 0.5608, 0.7804);
     //vec3 light_color = vec3(0.9, 0.9, 0.6);
 
     vec3 light_dir = normalize((light_pos - vert_new_position)).xyz;
