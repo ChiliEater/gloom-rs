@@ -32,7 +32,7 @@ use super::window_locks::WindowLocks;
 const TERRAIN: &str = "./resources/lunarsurface.obj";
 const HELICOPTER: &str = "./resources/helicopter.obj";
 const COLORCUBE: &str = "./resources/cube.obj";
-const HELI_COUNT: u32 = 5;
+const HELI_COUNT: u32 = 2;
 
 pub struct RenderingLoop {
     window_size: Arc<Mutex<(u32, u32, bool)>>,
@@ -71,11 +71,7 @@ impl RenderingLoop {
         self.meshes.generate_vaos();
         let mut binding = self.setup_scene();
         let mut root_node = binding.as_mut();
-        //let terrain: &mut SceneNode = root_node.get_child(0);
-        //let helicopter: &mut SceneNode = root_node.get_child(1);
-        //let heli_main_rotor: &mut SceneNode = helicopter.get_child(0);
-        //let heli_tail_rotor: &mut SceneNode = helicopter.get_child(1);
-        //let heli_door: &mut SceneNode = helicopter.get_child(2);
+
 
         // == // Set up your shaders here
         let fragment_shaders: Vec<String> = vec![
@@ -118,7 +114,7 @@ impl RenderingLoop {
             let delta_time = now.duration_since(previous_frame_time).as_secs_f32();
             previous_frame_time = now;
 
-            //helicopter_animation(elapsed, &mut root_node);
+            helicopter_animation(elapsed, &mut root_node);
             
 
             // Handle resize events
@@ -162,11 +158,11 @@ impl RenderingLoop {
                     None => {}
                 }
                 //gl::ClearColor(0.035, 0.046, 0.078, 1.0); // night sky, full opacity
-                gl::ClearColor(0.0078, 0.302, 0.251, 1.0);
+                gl::ClearColor(0.9216, 0.4431, 0.1451, 1.0);
                 gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
                 // == // Issue the necessary gl:: commands to draw your scene here
                 let movement = self.controls.handle(delta_time);
-                self.draw_scene_initial(
+                self.draw_scene(
                     &root_node,
                     &(perspective_matrix * movement),
                     &glm::identity(),
@@ -265,25 +261,10 @@ impl RenderingLoop {
         root_node
     }
 
-    unsafe fn draw_scene_initial(
-        &self,
-        node: &SceneNode,
-        view_projection_matrix: &Mat4x4,
-        transformation_so_far: &Mat4x4,
-    ) {
-        let new_matrix = transformation_so_far
-            * rotate_around(&node.rotation, &node.reference_point)
-            * scale_around(&node.scale, &node.reference_point)
-            * glm::translation(&node.position);
-
-        for &child in &node.children {
-            self.draw_scene(&*child, view_projection_matrix, &new_matrix);
-        }
-    }
 
     unsafe fn draw_scene(
         &self,
-        node: &scene_graph::SceneNode,
+        node: &SceneNode,
         view_projection_matrix: &Mat4x4,
         transformation_so_far: &Mat4x4,
     ) {
@@ -325,7 +306,7 @@ impl RenderingLoop {
 
 fn helicopter_animation(elapsed: f32, root_node: &mut Pin<&mut SceneNode>) {
     for i in 1..HELI_COUNT + 1 {
-        let heading = simple_heading_animation(elapsed + i as f32 * 5.0);
+        let heading = simple_heading_animation(elapsed + i as f32 * 1.1);
         root_node.get_child(i as usize).position =
             vec3(heading.x, root_node.get_child(1).position.y, heading.z);
         root_node.get_child(i as usize).reference_point =

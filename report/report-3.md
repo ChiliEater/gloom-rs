@@ -90,6 +90,81 @@ We end up with the following result:
 ![Smooth shading on the moon.](img/moon_shading.png)
 
 # Task 2
+We constructed a scene graph that contains all the elements of the scene.The structure is shown in the figure below:
+
+![](img/scene_graph.png)
+
+**mermaid code (might not work with pandoc)**
+
+```mermaid
+graph TD;
+    R((ROOT)) --> TERRAIN;
+    R --> H[HELICOPTER];
+    H --> M(main rotor);
+    H --> T(tail rotor);
+    H --> D(door);
+```
+
+The `SceneNode` structure has the following properties:
+
+- `position` where the node should be in relation to their parent
+- `rotation` of the node relative their parent
+- `scale` is quite explicit
+- `reference_point` the point this node is supposed to scale and rotate around
+- `vao_id` contains the vao of what should be drawn in this node
+- `index_count` the number of vertices that should be drawn
+- `children` contains all the scene node "below"
+
+We can now recursively iterate over all nodes to get their transformations relative to their parents and draw the elements in the scene using the following function.
+
+```rust
+unsafe fn draw_scene(
+        &self,
+        node: &SceneNode,
+        view_projection_matrix: &Mat4x4,
+        transformation_so_far: &Mat4x4,
+    ) {
+        let new_matrix = transformation_so_far
+            * rotate_around(&node.rotation, &node.reference_point)
+            * scale_around(&node.scale, &node.reference_point)
+            * glm::translation(&node.position);
+
+        if node.index_count > 0 {
+            gl::BindVertexArray(node.vao_id);
+            match &self.shader {
+                Some(shader) => {
+                    let transform_uniform = shader.get_uniform_location("transform");
+                    gl::UniformMatrix4fv(transform_uniform, 1, gl::FALSE, new_matrix.as_ptr());
+                    let view_uniform = shader.get_uniform_location("view_projection");
+                    gl::UniformMatrix4fv(
+                        view_uniform,
+                        1,
+                        gl::FALSE,
+                        view_projection_matrix.as_ptr(),
+                    );
+                }
+                None => {}
+            }
+
+            gl::DrawElements(
+                gl::TRIANGLES,
+                node.index_count,
+                gl::UNSIGNED_INT,
+                ptr::null(),
+            );
+        }
+
+        for &child in &node.children {
+            self.draw_scene(&*child, view_projection_matrix, &new_matrix);
+        }
+    }
+```
+
+The idea is that we compute the transformation matrix that has to be applied to the node ($\mathrm{rotate}\times\mathrm{scale}\times\mathrm{translate}$)
+
+*TO BE CONTINUED*
+
+We get the following scene
 
 ![](img/helicopter_scene.png)
 

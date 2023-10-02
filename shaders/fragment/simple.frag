@@ -29,14 +29,14 @@ void main()
     
     // Fixed light source at infinity, not really ambient lighting but adds volume.
     vec3 ambient_dir = normalize(vec3(0.8,0.5,0.6));
-    vec3 ambient_color = vec3(0.0078, 0.302, 0.251);
+    vec3 ambient_color = vec3(0.9216, 0.4431, 0.1451);
     float ambient_coeff = max(dot(vert_normals, ambient_dir), 0.0);
     vec3 ambient = ambient_coeff * ambient_color;
         
     // Light color and position (rotating Sun)
     vec4 light_pos =   500 * vec4(2*cos(time/10.0), sin(time/10.0),-1,1.0);
     //vec4 light_pos = camera_position;
-    vec3 light_color = vec3(0.9216, 0.4431, 0.1451);
+    vec3 light_color = vec3(0.7804, 0.0588, 0.6706);
     //vec3 light_color = vec3(0.9, 0.9, 0.6);
 
     vec3 light_dir = normalize((light_pos - vert_new_position)).xyz;
@@ -54,8 +54,8 @@ void main()
 
     // Implement fog (flat color)
     float dist =  distance(camera_position,vert_new_position);
-    vec3 fog_color = vec3(0.0078, 0.302, 0.251);
-    float fog_density = getFogFactor(dist);
+    vec3 fog_color = ambient_color;
+    float fog_density = getFogFactor(dist); 
     vec3 fog = fog_density*fog_color;
 
     color = vec4(vert_color.xyz * ((1-fog_density)*(diffuse+ambient+specular)+fog), 1.0);
