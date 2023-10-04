@@ -12,7 +12,7 @@ uniform float elapsed_time;
 
 float getFogFactor(float d)
 {
-    const float fog_max_distance = 1000.0;
+    const float fog_max_distance = 10000.0;
     const float fog_min_distance = 200.0;
 
     if (d>=fog_max_distance) return 1;
