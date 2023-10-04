@@ -1,18 +1,21 @@
-use crate::render::window_locks::{WindowLocks, self};
-use glutin::{event::{
-    DeviceEvent,
-    ElementState::{Pressed, Released},
-    Event, KeyboardInput,
-    VirtualKeyCode::{self, *},
-    WindowEvent,
-}, platform::run_return::EventLoopExtRunReturn};
+use crate::render::window_locks::{self, WindowLocks};
 use glutin::event_loop::ControlFlow;
+use glutin::{
+    event::{
+        DeviceEvent,
+        ElementState::{Pressed, Released},
+        Event, KeyboardInput,
+        VirtualKeyCode::{self, *},
+        WindowEvent,
+    },
+    platform::run_return::EventLoopExtRunReturn,
+};
 use std::sync::{Arc, Mutex, RwLock};
 
 pub struct InputLoop {
     render_thread_healthy: Arc<RwLock<bool>>,
     window_size: Arc<Mutex<(u32, u32, bool)>>,
-    pressed_keys: Arc<Mutex<Vec<VirtualKeyCode>>>,
+    pressed_keys: Arc<Mutex<Vec<KeyboardInput>>>,
     mouse_delta: Arc<Mutex<(f32, f32)>>,
 }
 
@@ -34,14 +37,14 @@ impl InputLoop {
         let pressed_keys = Arc::clone(&self.pressed_keys);
         event_loop.run_return(move |event, _, control_flow| {
             *control_flow = ControlFlow::Wait;
-    
+
             // Terminate program if render thread panics
             if let Ok(health) = render_thread_healthy.read() {
                 if !*health {
                     *control_flow = ControlFlow::Exit;
                 }
             }
-    
+
             match event {
                 Event::WindowEvent {
                     event: WindowEvent::Resized(physical_size),
@@ -63,43 +66,30 @@ impl InputLoop {
                 }
                 // Keep track of currently pressed keys to send to the rendering thread
                 Event::WindowEvent {
-                    event:
-                        WindowEvent::KeyboardInput {
-                            input:
-                                KeyboardInput {
-                                    state: key_state,
-                                    virtual_keycode: Some(keycode),
-                                    ..
-                                },
-                            ..
-                        },
+                    event: WindowEvent::KeyboardInput { input, .. },
                     ..
                 } => {
                     if let Ok(mut keys) = pressed_keys.lock() {
-                        match key_state {
+                        let virtual_keys: Vec<VirtualKeyCode> = keys.iter().map(|input| input.virtual_keycode.unwrap()).collect();
+                        match input.state {
                             Released => {
-                                if keys.contains(&keycode) {
-                                    let i = keys.iter().position(|&k| k == keycode).unwrap();
+                                if virtual_keys.contains(&input.virtual_keycode.unwrap()) {
+                                    let i = virtual_keys.iter().position(|&k| k == input.virtual_keycode.unwrap()).unwrap();
                                     keys.remove(i);
                                 }
                             }
                             Pressed => {
-                                if !keys.contains(&keycode) {
-                                    keys.push(keycode);
+                                if !virtual_keys.contains(&input.virtual_keycode.unwrap()) {
+                                    keys.push(input);
                                 }
                             }
                         }
                     }
-    
+
                     // Handle Escape and Q keys separately
-                    match keycode {
-                        Escape => {
-                            *control_flow = ControlFlow::Exit;
-                        }
-                        Q => {
-                            *control_flow = ControlFlow::Exit;
-                        }
-                        _ => {}
+                    const KEY_Q: u32 = 16;
+                    if input.virtual_keycode.unwrap() == Escape || input.scancode == KEY_Q {
+                        *control_flow = ControlFlow::Exit;
                     }
                 }
                 Event::DeviceEvent {
@@ -116,4 +106,3 @@ impl InputLoop {
         });
     }
 }
-

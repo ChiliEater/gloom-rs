@@ -17,6 +17,11 @@ const Y_SENSITIVITY: f32 = 60.0;
 const MOVEMENT_SPEED: f32 = 50.0;
 const SPRINT_MULTIPLIER: f32 = 10.0;
 
+const KEY_W: u32 = 17;
+const KEY_A: u32 = 30;
+const KEY_S: u32 = 31;
+const KEY_D: u32 = 32;
+
 pub struct Controls {
     position: Vec3,
     rotation: Vec3,
@@ -25,7 +30,7 @@ pub struct Controls {
     z_axis: Vec3,
     zero: Vec3,
     window_size: Arc<Mutex<(u32, u32, bool)>>,
-    pressed_keys: Arc<Mutex<Vec<VirtualKeyCode>>>,
+    pressed_keys: Arc<Mutex<Vec<KeyboardInput>>>,
     mouse_delta: Arc<Mutex<(f32, f32)>>,
 }
 
@@ -80,49 +85,18 @@ impl Controls {
     }
 
     fn handle_keyboard(&mut self, delta_time: f32, negative_rotation_matrix: &Mat4x4) -> Mat4x4 {
-        if let Ok(keys) = self.pressed_keys.lock() {
-            let mut delta_speed = MOVEMENT_SPEED * delta_time;
-            if keys.contains(&LShift) {
+        let mut delta_speed = MOVEMENT_SPEED * delta_time;
+        if let Ok(inputs) = self.pressed_keys.lock() {
+            let virtual_keys: Vec<VirtualKeyCode> = inputs.iter().map(|input| input.virtual_keycode.unwrap()).collect();
+            let scancodes: Vec<u32> = inputs.iter().map(|input| input.scancode).collect();
+            if virtual_keys.contains(&LShift) {
                 delta_speed *= SPRINT_MULTIPLIER;
             }
+            
             const X_SENSITIVITY: f32 = 7.0;
             const Y_SENSITIVITY: f32 = 7.0;
-            for key in keys.iter() {
-                match key {
-                    D | L => {
-                        self.position += (negative_rotation_matrix
-                            * (to_homogeneous(&self.x_axis) * delta_speed))
-                            .xyz()
-                    }
-                    A | J => {
-                        self.position -= (negative_rotation_matrix
-                            * (to_homogeneous(&self.x_axis) * delta_speed))
-                            .xyz()
-                    }
-                    S | K => {
-                        self.position += (negative_rotation_matrix
-                            * (to_homogeneous(&self.z_axis) * delta_speed))
-                            .xyz()
-                    }
-                    W | I => {
-                        self.position -= (negative_rotation_matrix
-                            * (to_homogeneous(&self.z_axis) * delta_speed))
-                            .xyz()
-                    }
-                    /*
-                    D | L => {
-                        self.position += self.x_axis * delta_speed;
-                    }
-                    A | J => {
-                        self.position -= self.x_axis * delta_speed;
-                    }
-                    S | K => {
-                        self.position += self.z_axis * delta_speed;
-                    }
-                    W | I => {
-                        self.position -= self.z_axis * delta_speed;
-                    }
-                    */
+            for input in virtual_keys.iter() {
+                match input {
                     Space => self.position += self.y_axis * delta_speed,
                     LControl => self.position -= self.y_axis * delta_speed,
                     Left => self.rotation.y -= Y_SENSITIVITY * delta_time,
@@ -132,7 +106,35 @@ impl Controls {
                     _ => {}
                 }
             }
+
+            for code in scancodes.iter() {
+                match *code {
+                    KEY_D => {
+                        self.position += (negative_rotation_matrix
+                            * (to_homogeneous(&self.x_axis) * delta_speed))
+                            .xyz()
+                    }
+                    KEY_A => {
+                        self.position -= (negative_rotation_matrix
+                            * (to_homogeneous(&self.x_axis) * delta_speed))
+                            .xyz()
+                    }
+                    KEY_S => {
+                        self.position += (negative_rotation_matrix
+                            * (to_homogeneous(&self.z_axis) * delta_speed))
+                            .xyz()
+                    }
+                    KEY_W => {
+                        self.position -= (negative_rotation_matrix
+                            * (to_homogeneous(&self.z_axis) * delta_speed))
+                            .xyz()
+                    }
+                    _ => {}
+                }
+            }
         }
+        
+        
         glm::translation(&(self.position * -1.0))
     }
 
