@@ -7,8 +7,8 @@ in vec4 vert_new_position;
 
 out vec4 color;
 
-uniform layout(location=1) float time;
 uniform vec4 camera_position;
+uniform float elapsed_time;
 
 float getFogFactor(float d)
 {
@@ -28,13 +28,13 @@ void main()
     // Diffuse lighting (lambertian model)
     
     // Fixed light source at infinity, not really ambient lighting but adds volume.
-    vec3 ambient_dir = normalize(vec3(0.8,0.5,0.6));
+    vec3 ambient_dir = normalize(vec3(-0.8,0.5,0.6));
     vec3 ambient_color = vec3(0.9216, 0.4431, 0.1451);
     float ambient_coeff = max(dot(vert_normals, ambient_dir), 0.0);
     vec3 ambient = ambient_coeff * ambient_color;
         
     // Light color and position (rotating Sun)
-    vec4 light_pos =   500 * vec4(2*cos(time/10.0), sin(time/10.0),-1,1.0);
+    vec4 light_pos =   500 * vec4(2*cos(elapsed_time), sin(elapsed_time),-1,1.0);
     //vec4 light_pos = camera_position;
     vec3 light_color = vec3(0.0588, 0.5608, 0.7804);
     //vec3 light_color = vec3(0.9, 0.9, 0.6);

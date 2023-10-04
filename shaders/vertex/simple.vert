@@ -12,14 +12,15 @@ out mat4 transform_mat;
 
 
 // Uniform variables that need to be updated in the rendering loop
-uniform layout(location=1) float time;
+uniform float elapsed_time;
 uniform mat4 transform;
 uniform mat4 view_projection;
+uniform vec4 camera_position;
 
 
 void main()
-{       float time_dump = time;
-        // This is the normal shader
+{       
+        /*// This is the normal shader
         vec4 new_position = view_projection * transform * position;
         
         vert_color = color;
@@ -27,23 +28,29 @@ void main()
         vert_position = position;
         vert_new_position = transform * position;
         gl_Position =  new_position;
+        */
         
-        
-        /*
+        // This is the curved world shader
         // Apply radial distortion to create a spherical world effect
-        float sphere_radius = 1000;
-        vec3 sphere_center = (transform * vec4(0,-1000,0,1.0)).xyz;
-        vec3 original_position = position.xyz - sphere_center;
-        float distance = length(original_position);
-        vec3 normalized_position = original_position / distance;
-        vec3 distorted_position = normalized_position * sphere_radius;
-        
-        // Transform the distorted position
-        vec4 new_position = view_projection * transform * vec4(distorted_position, 1.0);
-        
+        float planet_radius = 2000;
+        // Apply the spherical deformation
+        vec3 sphere_center = vec3(0.0, -planet_radius, 0.0); 
+        vec3 surface_normal = normalize((transform*position).xyz - sphere_center);
+
+        // Calculate the displacement based on the distance from the center of the sphere
+        vec3 position_on_sphere = vec3(position.x,0,position.z);
+        float distance_to_center = length(position_on_sphere - sphere_center);
+        vec3 deform_offset = (planet_radius - distance_to_center)*surface_normal;
+
+        // Apply the deformation to the position
+        vec4 deformed_position = position + vec4(deform_offset, 0.0);
+
+        // Transform the deformed position as before
+        vec4 new_position = view_projection * transform * deformed_position;
+
         vert_color = color;
-        vert_normals = normalize(mat3(transform) * normals);
-        vert_position = position;
-        vert_new_position = transform * vec4(distorted_position,1.0);
-        gl_Position = new_position;*/
+        vert_normals = normalize(mat3(transform) * normals + surface_normal);
+        vert_position = deformed_position;
+        vert_new_position = transform * deformed_position;
+        gl_Position = new_position;
 }
