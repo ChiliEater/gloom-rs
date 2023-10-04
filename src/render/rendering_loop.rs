@@ -7,7 +7,8 @@ use std::{mem, os::raw::c_void, ptr};
 use crate::input::controls::Controls;
 use crate::shader::Shader;
 use crate::toolbox::{
-    rotate_all, rotate_around, scale_around, simple_heading_animation, to_homogeneous,
+    movement_animation, rotate_all, rotate_around, scale_around, simple_heading_animation,
+    to_homogeneous,
 };
 use crate::{shader, util, INITIAL_SCREEN_H, INITIAL_SCREEN_W};
 use glm::{cos, half_pi, pi, sin, vec3, Mat4x4, Vec3};
@@ -33,7 +34,7 @@ const TERRAIN: &str = "./resources/lunarsurface.obj";
 const HELICOPTER: &str = "./resources/helicopter.obj";
 const COLORCUBE: &str = "./resources/cube.obj";
 const HELI_COUNT: u32 = 2;
-const HELICOPTER_INDEX: usize = 2;
+const HELICOPTER_INDEX: usize = 1;
 
 pub struct RenderingLoop {
     window_size: Arc<Mutex<(u32, u32, bool)>>,
@@ -116,6 +117,25 @@ impl RenderingLoop {
             previous_frame_time = now;
 
             helicopter_animation(elapsed, &mut root_node);
+            let camera_offset = vec3(0.0, 10.0, 20.0);
+            let negative_rotation_matrix = self.controls.handle_mouse(delta_time, &-camera_offset);
+
+
+            {
+                let helicopter = root_node.get_child(HELICOPTER_INDEX);
+                self.controls.handle_keyboard_helicopter(delta_time, &camera_offset);
+                let heading = movement_animation(
+                    &self.controls.speed,
+                    &helicopter.position,
+                    &helicopter.rotation,
+                    &self.controls.rotation,
+                );
+                let new_helicopter_position = vec3(heading.x, heading.y, heading.z);
+                helicopter.position = new_helicopter_position;
+                helicopter.reference_point = new_helicopter_position;
+                helicopter.rotation = vec3(heading.pitch, heading.yaw, heading.roll);
+                println!("Cam: {}\nHeli: {}\n---", self.controls.rotation, helicopter.rotation);
+            }
 
             // Handle resize events
             if let Ok(mut new_size) = self.window_size.lock() {
@@ -158,7 +178,6 @@ impl RenderingLoop {
                 gl::ClearColor(0.9216, 0.4431, 0.1451, 1.0);
                 gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
                 // == // Issue the necessary gl:: commands to draw your scene here
-                let camera_offset = vec3(0.0, 10.0, 20.0);
                 self.handle_camera(&mut root_node, &camera_offset);
                 let movement = self.controls.handle(delta_time, &-camera_offset);
                 self.draw_scene(
