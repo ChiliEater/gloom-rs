@@ -70,26 +70,28 @@ impl InputLoop {
                     ..
                 } => {
                     if let Ok(mut keys) = pressed_keys.lock() {
-                        let virtual_keys: Vec<VirtualKeyCode> = keys.iter().map(|input| input.virtual_keycode.unwrap()).collect();
-                        match input.state {
-                            Released => {
-                                if virtual_keys.contains(&input.virtual_keycode.unwrap()) {
-                                    let i = virtual_keys.iter().position(|&k| k == input.virtual_keycode.unwrap()).unwrap();
-                                    keys.remove(i);
-                                }
+                        if let Some(key) = input.virtual_keycode {
+                            // Handle Escape and Q keys separately
+                            const KEY_Q: u32 = 16;
+                            if key == Escape || input.scancode == KEY_Q {
+                                *control_flow = ControlFlow::Exit;
                             }
-                            Pressed => {
-                                if !virtual_keys.contains(&input.virtual_keycode.unwrap()) {
-                                    keys.push(input);
+
+                            let virtual_keys: Vec<VirtualKeyCode> = keys.iter().map(|input| input.virtual_keycode.unwrap()).collect();
+                            match input.state {
+                                Released => {
+                                    if virtual_keys.contains(&key) {
+                                        let i = virtual_keys.iter().position(|&k| k == key).unwrap();
+                                        keys.remove(i);
+                                    }
+                                }
+                                Pressed => {
+                                    if !virtual_keys.contains(&key) {
+                                        keys.push(input);
+                                    }
                                 }
                             }
                         }
-                    }
-
-                    // Handle Escape and Q keys separately
-                    const KEY_Q: u32 = 16;
-                    if input.virtual_keycode.unwrap() == Escape || input.scancode == KEY_Q {
-                        *control_flow = ControlFlow::Exit;
                     }
                 }
                 Event::DeviceEvent {
