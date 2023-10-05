@@ -63,9 +63,14 @@ pub fn movement_animation(
         MAX_ANGLE,
     );
 
-    let yaw: f64 = heli_rotation.y as f64 - clamp((camera_rotation-heli_rotation).y as f64, -0.1, 0.1);
+    //let yaw: f64 = heli_rotation.y as f64 - clamp((camera_rotation-heli_rotation).y as f64, -0.1, 0.1);
     //let yaw: f64 = -camera_rotation.y as f64;
-    //let yaw: f64 = heli_rotation.y as f64 - (camera_rotation.y as f64 + pi::<f64>()) % two_pi::<f64>() - (heli_rotation.y as f64 + two_pi::<f64>()) % two_pi::<f64>();
+    let delta_angle: f64 = ((heli_rotation.y as f64 + two_pi::<f64>()) - (camera_rotation.y as f64 + two_pi::<f64>())) % two_pi::<f64>();
+    let yaw: f64 = -(heli_rotation.y as f64 - delta_angle * 0.5) % two_pi::<f64>();
+    // 30° + 360° - 180° + 360° = 390° - 540° = -150°
+    // The plus 360 is to avoid the 0° boundary
+    // -150° % 360° = -150°
+    // 30° - (-150° * 0.5) = 30° - (-75°) = 105° WTF??? This should work
 
     Heading {
         x: xpos as f32,
