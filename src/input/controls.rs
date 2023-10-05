@@ -142,8 +142,8 @@ impl Controls {
 
     pub fn handle_keyboard_helicopter(&mut self, delta_time: f32, pivot: &Vec3) {
         let camera_transform = rotate_around(&self.rotation, pivot);
-        let deceleration: f32 = 1.0;
-        let acceleration: f32 = deceleration * 10.0;
+        let deceleration: f32 = 8.0;
+        let acceleration: f32 = 10.0;
         //self.speed = glm::max(&self.speed, max_speed);
         let mut delta_acceleration = acceleration * delta_time;
         let mut delta_deceleration = deceleration * delta_time;
@@ -197,7 +197,7 @@ impl Controls {
                 }
             }
         }
-        //self.speed += (-glm::normalize(&self.speed)) * delta_deceleration;
+        self.speed -= self.speed * delta_deceleration;
         self.speed = glm::clamp(&self.speed, -MAX_SPEED as f32, MAX_SPEED as f32);
     }
 

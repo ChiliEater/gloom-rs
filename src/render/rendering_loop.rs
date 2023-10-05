@@ -134,7 +134,7 @@ impl RenderingLoop {
                 helicopter.position = new_helicopter_position;
                 helicopter.reference_point = new_helicopter_position;
                 helicopter.rotation = vec3(heading.pitch, heading.yaw, heading.roll);
-                println!("Cam: {}\nHeli: {}\n---", self.controls.rotation, helicopter.rotation);
+                //println!("Cam: {}\nHeli: {}\n---", self.controls.rotation, helicopter.rotation);
             }
 
             // Handle resize events

@@ -63,15 +63,19 @@ pub fn movement_animation(
         MAX_ANGLE,
     );
 
+
     //let yaw: f64 = heli_rotation.y as f64 - clamp((camera_rotation-heli_rotation).y as f64, -0.1, 0.1);
     //let yaw: f64 = -camera_rotation.y as f64;
-    let delta_angle: f64 = ((heli_rotation.y as f64 + two_pi::<f64>()) - (camera_rotation.y as f64 + two_pi::<f64>())) % two_pi::<f64>();
-    let yaw: f64 = -(heli_rotation.y as f64 - delta_angle * 0.5) % two_pi::<f64>();
+    //let delta_angle: f64 = ((heli_rotation.y as f64 + two_pi::<f64>()) - (camera_rotation.y as f64 + two_pi::<f64>())) % two_pi::<f64>();
+    //let yaw: f64 = -(heli_rotation.y as f64 - delta_angle * 0.5) % two_pi::<f64>();
     // 30° + 360° - 180° + 360° = 390° - 540° = -150°
     // The plus 360 is to avoid the 0° boundary
     // -150° % 360° = -150°
     // 30° - (-150° * 0.5) = 30° - (-75°) = 105° WTF??? This should work
-
+    
+    // THIS WORKS
+    let error :f64 = get_angular_error(heli_rotation.y as f64, camera_rotation.y as f64);
+    let yaw: f64 = (heli_rotation.y as f64 - 0.05*error)%two_pi::<f64>();
     Heading {
         x: xpos as f32,
         y: ypos as f32,
@@ -107,3 +111,25 @@ pub fn to_homogeneous(vec: &Vec3) -> Vec4 {
 fn clamp(x: f64, min_value: f64, max_value: f64) -> f64 {
     x.min(max_value).max(min_value)
 }
+
+fn get_angular_error(angle1: f64, angle2: f64) -> f64 {
+    let diff = angle1 - (2.0 * pi::<f64>() - angle2);
+    
+    let mut error = if diff > pi::<f64>() {
+        diff - two_pi::<f64>()
+    } else if diff < -pi::<f64>() {
+        diff + two_pi::<f64>()
+    } else {
+        diff
+    };
+    
+    // Ensure the result is within the -π to π range
+    if error > std::f64::consts::PI {
+        error -= two_pi::<f64>();
+    } else if error < -pi::<f64>() {
+        error += two_pi::<f64>();
+    }
+    
+    error
+}
+
