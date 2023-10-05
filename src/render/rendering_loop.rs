@@ -1,4 +1,5 @@
 extern crate nalgebra_glm as glm;
+use std::f32::consts;
 use std::pin::Pin;
 use std::sync::{Arc, Mutex, RwLock};
 use std::thread::{self, JoinHandle};
@@ -116,14 +117,14 @@ impl RenderingLoop {
             let delta_time = now.duration_since(previous_frame_time).as_secs_f32();
             previous_frame_time = now;
 
-            helicopter_animation(elapsed, &mut root_node);
+            //helicopter_animation(elapsed, &mut root_node);
             let camera_offset = vec3(0.0, 10.0, 20.0);
             let negative_rotation_matrix = self.controls.handle_mouse(delta_time, &-camera_offset);
 
-
             {
                 let helicopter = root_node.get_child(HELICOPTER_INDEX);
-                self.controls.handle_keyboard_helicopter(delta_time, &camera_offset);
+                self.controls
+                    .handle_keyboard_helicopter(delta_time, &camera_offset);
                 let heading = movement_animation(
                     &self.controls.speed,
                     &helicopter.position,
@@ -134,7 +135,14 @@ impl RenderingLoop {
                 helicopter.position = new_helicopter_position;
                 helicopter.reference_point = new_helicopter_position;
                 helicopter.rotation = vec3(heading.pitch, heading.yaw, heading.roll);
+                //helicopter.rotation = vec3(elapsed, heading.yaw, 0.0);
                 println!("Heli: {}\n---", self.controls.speed);
+                helicopter.get_child(0).rotation.y = (helicopter.get_child(0).rotation.y
+                    + heading.top_rotor * delta_time)
+                    % (consts::PI * 2.0);
+                helicopter.get_child(1).rotation.x = (helicopter.get_child(1).rotation.x
+                    + heading.rear_rotor * delta_time)
+                    % (consts::PI * 2.0);
             }
 
             // Handle resize events
@@ -277,10 +285,12 @@ impl RenderingLoop {
         }
 
         // Add camera to heli
+        /*
         let mut camera: Node = SceneNode::new(NodeType::Camera);
         camera.position = vec3(0.0, 10.0, -20.0);
         camera.rotation = vec3(0.05, 0.0, 0.0);
         root_node.get_child(1).add_child(&camera);
+        */
 
         root_node
     }
