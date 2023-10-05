@@ -18,6 +18,8 @@ const MOVEMENT_SPEED: f32 = 50.0;
 const SPRINT_MULTIPLIER: f32 = 2.0;
 pub const MAX_ANGLE: f64 = 0.5; // Max angle in radians
 pub const MAX_SPEED: f64 = 25.0; // Max speed from the inputs
+pub const DECELERATION: f32 = 8.0;
+pub const ACCELERATION: f32 = 16.0;
 
 const KEY_W: u32 = 17;
 const KEY_A: u32 = 30;
@@ -81,7 +83,7 @@ impl Controls {
         self.rotation.y = ((self.rotation.y + two_pi::<f32>())%two_pi::<f32>()).abs().min(two_pi());
         
 
-        rotate_around(&self.rotation, &pivot)
+        rotate_around(&self.rotation, pivot)
     }
 
     fn handle_keyboard(&mut self, delta_time: f32, negative_rotation_matrix: &Mat4x4) -> Mat4x4 {
@@ -141,12 +143,10 @@ impl Controls {
     }
 
     pub fn handle_keyboard_helicopter(&mut self, delta_time: f32, pivot: &Vec3) {
-        let camera_transform = rotate_around(&self.rotation, pivot);
-        let deceleration: f32 = 8.0;
-        let acceleration: f32 = 10.0;
+        let camera_transform: Mat4x4 = glm::rotation(-self.rotation.y, &self.y_axis);
         //self.speed = glm::max(&self.speed, max_speed);
-        let mut delta_acceleration = acceleration * delta_time;
-        let mut delta_deceleration = deceleration * delta_time;
+        let mut delta_acceleration = ACCELERATION * delta_time;
+        let delta_deceleration = DECELERATION * delta_time;
         if let Ok(inputs) = self.pressed_keys.lock() {
             let virtual_keys: Vec<VirtualKeyCode> = inputs
                 .iter()
