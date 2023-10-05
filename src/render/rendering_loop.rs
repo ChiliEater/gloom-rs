@@ -133,10 +133,10 @@ impl RenderingLoop {
                 );
                 let new_helicopter_position = vec3(heading.x, heading.y, heading.z);
                 helicopter.position = new_helicopter_position;
-                helicopter.reference_point = new_helicopter_position;
-                helicopter.rotation = vec3(heading.pitch, heading.yaw, heading.roll);
+                helicopter.reference_point = vec3(0.0,0.0,0.0);
+                helicopter.rotation = vec3(heading.pitch, heading.yaw,heading.roll);
                 //helicopter.rotation = vec3(elapsed, heading.yaw, 0.0);
-                println!("Heli: {}\n---", self.controls.speed);
+                //println!("Heli: {}\n---", self.controls.speed);
                 helicopter.get_child(0).rotation.y = (helicopter.get_child(0).rotation.y
                     + heading.top_rotor * delta_time)
                     % (consts::PI * 2.0);

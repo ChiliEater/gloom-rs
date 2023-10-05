@@ -76,9 +76,9 @@ impl SceneNode {
     }
 
     pub fn get_transform(&self) -> Mat4x4 {
-        rotate_around(&self.rotation, &self.reference_point)
-            * scale_around(&self.scale, &self.reference_point)
-            * glm::translation(&self.position)
+        glm::translation(&self.position)
+        * rotate_around(&self.rotation, &self.reference_point)
+        * scale_around(&self.scale, &self.reference_point)
     }
 
     #[allow(dead_code)]

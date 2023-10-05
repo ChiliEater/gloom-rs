@@ -56,7 +56,7 @@ impl Controls {
     pub fn handle(&mut self, delta_time: f32, pivot: &Vec3) -> Mat4x4 {
         //let translation = self.handle_keyboard(delta_time, &negative_rotation);
         let translation = glm::translation(&(self.position * -1.0));
-        let rotation: Mat4x4 = rotate_around(&self.rotation, pivot);
+        let rotation: Mat4x4 = rotate_around(&self.rotation, &pivot);
         rotation * translation
     }
 
@@ -157,8 +157,8 @@ impl Controls {
                 delta_acceleration *= SPRINT_MULTIPLIER;
             }
 
-            const X_SENSITIVITY: f32 = 7.0;
-            const Y_SENSITIVITY: f32 = 7.0;
+            const X_SENSITIVITY: f32 = 4.0;
+            const Y_SENSITIVITY: f32 = 4.0;
             for input in virtual_keys.iter() {
                 match input {
                     Space => self.speed.y += delta_acceleration,

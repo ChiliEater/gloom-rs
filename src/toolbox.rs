@@ -1,7 +1,7 @@
 extern crate nalgebra_glm as glm;
 use std::{f32::consts, f64::consts::PI};
 
-use glm::{pi, two_pi, vec2, vec3, vec4, Mat4x4, Vec3, Vec4};
+use glm::{pi, two_pi, vec2, vec3, vec4, Mat4x4, Vec3, Vec4, mat2, Mat2x2, Vec2};
 
 use crate::input::controls::{MAX_ANGLE, MAX_SPEED};
 
@@ -59,23 +59,21 @@ pub fn movement_animation(
     let xpos: f64 = new_position.x as f64;
     let ypos: f64 = new_position.y as f64;
     let zpos: f64 = new_position.z as f64;
+    
+    let theta: f32 = heli_rotation.y;
 
-    let relative_rotation: Mat4x4 = glm::rotation(-heli_rotation.y, &vec3(0.0, 1.0, 0.0));
-    let relative_speed: Vec3 = (relative_rotation * to_homogeneous(speed)).xyz();
-    let roll: f64 = -clamp((speed.x as f64) / 2.0 * MAX_ANGLE, -MAX_ANGLE, MAX_ANGLE);
-    let pitch: f64 = clamp((speed.z as f64) / 2.0 * MAX_ANGLE, -MAX_ANGLE, MAX_ANGLE);
+    let relative_rotation: Mat2x2 = mat2(
+        theta.cos(),-theta.sin(),
+        theta.sin(),theta.cos()
+    );
 
-    let tilt: Vec4 = relative_rotation * vec4(pitch as f32, 0.0, roll as f32, 1.0);
-
-    //let yaw: f64 = heli_rotation.y as f64 - clamp((camera_rotation-heli_rotation).y as f64, -0.1, 0.1);
-    //let yaw: f64 = -camera_rotation.y as f64;
-    //let delta_angle: f64 = ((heli_rotation.y as f64 + two_pi::<f64>()) - (camera_rotation.y as f64 + two_pi::<f64>())) % two_pi::<f64>();
-    //let yaw: f64 = -(heli_rotation.y as f64 - delta_angle * 0.5) % two_pi::<f64>();
-    // 30° + 360° - 180° + 360° = 390° - 540° = -150°
-    // The plus 360 is to avoid the 0° boundary
-    // -150° % 360° = -150°
-    // 30° - (-150° * 0.5) = 30° - (-75°) = 105° WTF??? This should work
-
+    let relative_speed: Vec2 = (relative_rotation * vec2(speed.x,speed.z)).xy();
+    let roll: f64 = -clamp((relative_speed.x as f64) / 2.0 * MAX_ANGLE, -MAX_ANGLE, MAX_ANGLE);
+    let pitch: f64 = clamp((relative_speed.y as f64) / 2.0 * MAX_ANGLE, -MAX_ANGLE, MAX_ANGLE);
+    println!("Speed : \n{}",relative_speed);
+    println!("roll/pitch : \n{}\n{}",roll,pitch);
+    
+    
     // THIS WORKS
     let error: f64 = get_angular_error(heli_rotation.y as f64, camera_rotation.y as f64);
     let yaw: f64 = (heli_rotation.y as f64 - 0.05 * error) % two_pi::<f64>();
@@ -83,13 +81,14 @@ pub fn movement_animation(
     let top_rotor: f32 = BASE_ROTATION + glm::magnitude(speed) * ROTATION_RATE;
     let rear_rotor: f32 = BASE_ROTATION + (yaw as f32 - heli_rotation.y) * ROTATION_RATE * 4.0;
 
-    let theta: f64 = heli_rotation.y.into();
     Heading {
         x: xpos as f32,
         y: ypos as f32,
         z: zpos as f32,
-        roll: (roll * theta.cos() - pitch * theta.sin()) as f32,
-        pitch: (pitch * theta.cos() + roll * theta.sin()) as f32,
+        //roll: (roll * theta.cos() as f64 - pitch * theta.sin() as f64) as f32,
+        //pitch: (pitch * theta.cos() as f64 + roll * theta.sin() as f64) as f32,
+        roll: roll as f32,
+        pitch: pitch as f32,
         yaw: yaw as f32,
         top_rotor,
         rear_rotor,
@@ -100,14 +99,14 @@ pub fn rotate_all(angles: &Vec3) -> Mat4x4 {
     let x_axis: Vec3 = vec3(1.0, 0.0, 0.0);
     let y_axis: Vec3 = vec3(0.0, 1.0, 0.0);
     let z_axis: Vec3 = vec3(0.0, 0.0, 1.0);
-
+    
     glm::rotation(angles.x, &x_axis)
     * glm::rotation(angles.y, &y_axis)
     * glm::rotation(angles.z, &z_axis)
 }
 
 pub fn rotate_around(angles: &Vec3, point: &Vec3) -> Mat4x4 {
-    glm::translation(point) * rotate_all(angles) * glm::translation(&(-point))
+    glm::translation(&point) * rotate_all(angles) * glm::translation(&(-point))
 }
 
 pub fn scale_around(factors: &Vec3, point: &Vec3) -> Mat4x4 {
