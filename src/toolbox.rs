@@ -22,7 +22,7 @@ pub struct Heading {
 pub fn simple_heading_animation(time: f32) -> Heading {
     let t = time as f64;
     let step = 0.05f64;
-    let path_size = 50f64;
+    let path_size = 20f64;
     let circuit_speed = 0.5f64;
 
     let xpos = path_size * (2.0 * (t + 0.0) * circuit_speed).sin();
@@ -70,7 +70,7 @@ pub fn movement_animation(
     let relative_speed: Vec2 = (relative_rotation * vec2(speed.x,speed.z)).xy();
     let roll: f32 = -clamp(relative_speed.x / MAX_SPEED * MAX_ANGLE, -MAX_ANGLE, MAX_ANGLE);
     let pitch: f32 = clamp(relative_speed.y / MAX_SPEED * MAX_ANGLE, -MAX_ANGLE, MAX_ANGLE);
-    println!("[Speed  |  Roll/Pitch] \n{:.3}",mat2(relative_speed.x,roll,relative_speed.y,pitch));
+    //println!("[Speed  |  Roll/Pitch] \n{:.3}",mat2(relative_speed.x,roll,relative_speed.y,pitch));
     
     
     
@@ -113,7 +113,7 @@ pub fn rotate_all_intrinsic(angles: &Vec3) -> Mat4x4 {
     let y_rotation: Mat4x4 = glm::rotation(angles.y, &y_axis);
     let z_rotation: Mat4x4 = glm::rotation(angles.z, &(y_rotation * to_homogeneous(&z_axis)).xyz());
     let x_rotation: Mat4x4 = glm::rotation(angles.x, &(z_rotation * y_rotation * to_homogeneous(&x_axis)).xyz());
-    x_rotation * z_rotation * y_rotation
+    x_rotation * z_rotation * y_rotation // Do not ask the Elevated One
 }
 
 pub fn rotate_around(angles: &Vec3, point: &Vec3) -> Mat4x4 {

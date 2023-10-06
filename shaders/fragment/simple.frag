@@ -9,6 +9,8 @@ out vec4 color;
 
 uniform vec4 camera_position;
 uniform float elapsed_time;
+uniform vec4 heli_position;
+uniform mat4 heli_yaw;
 
 float getFogFactor(float d)
 {
@@ -34,9 +36,9 @@ void main()
     vec3 ambient = ambient_coeff * ambient_color;
         
     // Light color and position (rotating Sun)
-    vec4 light_pos =   500 * vec4(2*cos(elapsed_time), sin(elapsed_time),-1,1.0);
-    //vec4 light_pos = camera_position;
-    vec3 light_color = vec3(0.0588, 0.5608, 0.7804);
+    //vec4 light_pos =   500 * vec4(2*cos(elapsed_time), sin(elapsed_time),-1,1.0);
+    vec4 light_pos = heli_position + heli_yaw * vec4(0.0,0.0,-20,1.0);
+    vec3 light_color = vec3(0.0588, 0.5608, 0.6804) * 0.9;
     //vec3 light_color = vec3(0.9, 0.9, 0.6);
 
     vec3 light_dir = normalize((light_pos - vert_new_position)).xyz;

@@ -117,7 +117,7 @@ impl RenderingLoop {
             let delta_time = now.duration_since(previous_frame_time).as_secs_f32();
             previous_frame_time = now;
 
-            //helicopter_animation(elapsed, &mut root_node);
+            helicopter_animation(elapsed, &mut root_node);
             let camera_offset = vec3(0.0, 10.0, 20.0);
             let negative_rotation_matrix = self.controls.handle_mouse(delta_time, &-camera_offset);
 
@@ -179,6 +179,12 @@ impl RenderingLoop {
                         );
                         uniform = shader.get_uniform_location("elapsed_time");
                         gl::Uniform1f(uniform, elapsed);
+                        uniform = shader.get_uniform_location("heli_position");
+                        let heli = root_node.get_child(HELICOPTER_INDEX).position;
+                        gl::Uniform4f(uniform, heli.x, heli.y, heli.z, 1.0);
+                        uniform = shader.get_uniform_location("heli_yaw");
+                        let rotation = glm::rotation(root_node.get_child(HELICOPTER_INDEX).rotation.y, &vec3(0.0, 1.0, 0.0));
+                        gl::UniformMatrix4fv(uniform, 1, gl::FALSE, rotation.as_ptr());
                     }
                     None => {}
                 }
@@ -301,6 +307,7 @@ impl RenderingLoop {
         view_projection_matrix: &Mat4x4,
         transformation_so_far: &Mat4x4,
     ) {
+        // Determine 
         let new_matrix = transformation_so_far * node.get_transform_intrinsic();
 
         if node.index_count > 0 && node.node_type == NodeType::Mesh {
@@ -340,20 +347,20 @@ impl RenderingLoop {
 }
 
 fn helicopter_animation(elapsed: f32, root_node: &mut Pin<&mut SceneNode>) {
-    for i in 2..HELI_COUNT + 1 {
-        let heading = simple_heading_animation(elapsed + i as f32 * 1.1);
-        root_node.get_child(i as usize).position =
-            vec3(heading.x, root_node.get_child(1).position.y, heading.z);
-        root_node.get_child(i as usize).reference_point =
-            vec3(heading.x, root_node.get_child(1).position.y, heading.z);
-        root_node.get_child(i as usize).rotation = vec3(heading.pitch, heading.yaw, heading.roll);
+    for i in HELICOPTER_INDEX+1..(HELI_COUNT + 1) as usize {
+        let heading = simple_heading_animation(elapsed + i as f32);
+        root_node.get_child(i).position =
+            vec3(heading.x, root_node.get_child(i).position.y, heading.z);
+        root_node.get_child(i).reference_point =
+            vec3(heading.x, root_node.get_child(i).position.y, heading.z);
+        root_node.get_child(i).rotation = vec3(heading.pitch, heading.yaw, heading.roll);
 
         // ROTATE
         //root_node.get_child(1).rotation = self.controls.get_position();
         //root_node.get_child(0).rotation = vec3(0.0, 0.0,elapsed.sin());
 
         // rotate rotors
-        root_node.get_child(i as usize).get_child(1).rotation = vec3(elapsed * 30.0, 0.0, 0.0);
-        root_node.get_child(i as usize).get_child(0).rotation = vec3(0.0, elapsed * 30.0, 0.0);
+        root_node.get_child(i).get_child(1).rotation = vec3(elapsed * 30.0, 0.0, 0.0);
+        root_node.get_child(i).get_child(0).rotation = vec3(0.0, elapsed * 30.0, 0.0);
     }
 }

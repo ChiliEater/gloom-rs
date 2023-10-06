@@ -17,7 +17,7 @@ const Y_SENSITIVITY: f32 = 60.0;
 const MOVEMENT_SPEED: f32 = 50.0;
 const SPRINT_MULTIPLIER: f32 = 2.0;
 pub const MAX_ANGLE: f32 = 0.5; // Max angle in radians
-pub const MAX_SPEED: f32 = 2.0; // Max speed from the inputs
+pub const MAX_SPEED: f32 = 3.0; // Max speed from the inputs
 pub const DECELERATION: f32 = 8.0;
 pub const ACCELERATION: f32 = 16.0;
 
