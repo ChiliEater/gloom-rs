@@ -56,9 +56,9 @@ pub fn movement_animation(
 ) -> Heading {
     let new_position: Vec3 = heli_position + speed;
 
-    let xpos: f64 = new_position.x as f64;
-    let ypos: f64 = new_position.y as f64;
-    let zpos: f64 = new_position.z as f64;
+    let xpos: f32 = new_position.x;
+    let ypos: f32 = new_position.y;
+    let zpos: f32 = new_position.z;
     
     let theta: f32 = heli_rotation.y;
 
@@ -68,28 +68,26 @@ pub fn movement_animation(
     );
 
     let relative_speed: Vec2 = (relative_rotation * vec2(speed.x,speed.z)).xy();
-    let roll: f64 = -clamp((relative_speed.x as f64) / 2.0 * MAX_ANGLE, -MAX_ANGLE, MAX_ANGLE);
-    let pitch: f64 = clamp((relative_speed.y as f64) / 2.0 * MAX_ANGLE, -MAX_ANGLE, MAX_ANGLE);
+    let roll: f32 = -clamp(relative_speed.x / MAX_SPEED * MAX_ANGLE, -MAX_ANGLE, MAX_ANGLE);
+    let pitch: f32 = clamp(relative_speed.y / MAX_SPEED * MAX_ANGLE, -MAX_ANGLE, MAX_ANGLE);
     println!("Speed : \n{}",relative_speed);
     println!("roll/pitch : \n{}\n{}",roll,pitch);
     
     
     // THIS WORKS
-    let error: f64 = get_angular_error(heli_rotation.y as f64, camera_rotation.y as f64);
-    let yaw: f64 = (heli_rotation.y as f64 - 0.05 * error) % two_pi::<f64>();
+    let error: f32 = get_angular_error(heli_rotation.y, camera_rotation.y);
+    let yaw: f32 = (heli_rotation.y - 0.05 * error) % two_pi::<f32>();
 
-    let top_rotor: f32 = BASE_ROTATION + glm::magnitude(speed) * ROTATION_RATE;
-    let rear_rotor: f32 = BASE_ROTATION + (yaw as f32 - heli_rotation.y) * ROTATION_RATE * 4.0;
+    let top_rotor: f32 = BASE_ROTATION + 0.5 * glm::magnitude(speed) * ROTATION_RATE;
+    let rear_rotor: f32 = BASE_ROTATION + (yaw - heli_rotation.y) * ROTATION_RATE * 4.0;
 
     Heading {
-        x: xpos as f32,
-        y: ypos as f32,
-        z: zpos as f32,
-        //roll: (roll * theta.cos() as f64 - pitch * theta.sin() as f64) as f32,
-        //pitch: (pitch * theta.cos() as f64 + roll * theta.sin() as f64) as f32,
-        roll: roll as f32,
-        pitch: pitch as f32,
-        yaw: yaw as f32,
+        x: xpos,
+        y: ypos,
+        z: zpos,
+        roll,
+        pitch,
+        yaw,
         top_rotor,
         rear_rotor,
     }
@@ -117,26 +115,26 @@ pub fn to_homogeneous(vec: &Vec3) -> Vec4 {
     vec4(vec.x, vec.y, vec.z, 1.0)
 }
 
-fn clamp(x: f64, min_value: f64, max_value: f64) -> f64 {
+fn clamp(x: f32, min_value: f32, max_value: f32) -> f32 {
     x.min(max_value).max(min_value)
 }
 
-fn get_angular_error(angle1: f64, angle2: f64) -> f64 {
-    let diff = angle1 - (2.0 * pi::<f64>() - angle2);
+fn get_angular_error(angle1: f32, angle2: f32) -> f32 {
+    let diff: f32 = angle1 - (2.0 * pi::<f32>() - angle2);
 
-    let mut error = if diff > pi::<f64>() {
-        diff - two_pi::<f64>()
-    } else if diff < -pi::<f64>() {
-        diff + two_pi::<f64>()
+    let mut error = if diff > pi::<f32>() {
+        diff - two_pi::<f32>()
+    } else if diff < -pi::<f32>() {
+        diff + two_pi::<f32>()
     } else {
         diff
     };
 
     // Ensure the result is within the -π to π range
-    if error > std::f64::consts::PI {
-        error -= two_pi::<f64>();
-    } else if error < -pi::<f64>() {
-        error += two_pi::<f64>();
+    if error > pi::<f32>() {
+        error -= two_pi::<f32>();
+    } else if error < -pi::<f32>() {
+        error += two_pi::<f32>();
     }
 
     error
