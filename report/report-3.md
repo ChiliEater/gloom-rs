@@ -186,16 +186,38 @@ uniform mat4 transform;         // Normals transformation matrix
 uniform mat4 view_projection;   // View projection matrix
 
 out vert_normals                // The updated normals
+out vert_position               // The updated position
 void main(){
         vert_normals = normalize(mat3(transform) * normals);
-        gl_Position =  view_projection * transform * position;  
+        vert_position = view_projection * transform * position;
+        gl_Position =  vert_position;  
 }
 ```
-This allows us to use the corrected `vert_normals` in the fragment shader to fix the lighting.
+This allows us to use the corrected `vert_normals` and `vert_position` in the fragment shader to fix the lighting.
 
-![](img/heli-lighting-1-final.png)
+```glsl
+void main()
+{
+    // Diffuse lighting (lambertian model)
+    
+    // Light color and position (fixed Sun)
+    vec4 light_pos = vec4(1000,1000,500,1.0);
+    vec3 light_color = vec3(0.9216, 0.4431, 0.1451);
+    vec3 light_dir = normalize((light_pos - vert_position)).xyz;
+    float diff_coeff = max(dot(vert_normals, light_dir), 0.0);
+    vec3 diffuse = diff_coeff * light_color;
 
-![](img/heli-lighting-2.png)
+    color = vec4(vert_color.xyz * diffuse, 1.0);
+}
+```
+
+
+
+
+![Helicopter with correct lighting **without** rotation](img/heli-lighting-1-final.png)
+
+![Helicopter with correct lighting **with** rotation](img/heli-lighting-2.png)
+
 
 # Task 6
 
@@ -206,6 +228,47 @@ This allows us to use the corrected `vert_normals` in the fragment shader to fix
 # Bonus Tasks
 
 ## Bonus a
+Here we focus on implementing the Phong shading model. It consists of 3 parts :
+
+- ambient lighting (base light level when there is no light source)
+- lambertian diffuse lighting just as before
+- specular lighting depends on the angle between the camera and the light source
+
+We already have everything that we need in the fragment shader for the ambient and lambertian parts but we need to pass the camera position as a uniform to do the specular reflection.
+
+The final fragment shader looks like this :
+```glsl
+void main()
+{
+    // ambient lighting
+    vec3 ambient_color = vec3(0.9216, 0.4431, 0.1451);
+    float ambient_coeff = 0.2;
+    vec3 ambient = ambient_coeff * ambient_color;
+        
+    // Lambertian lighting
+    //vec4 light_pos = heli_position + heli_yaw * vec4(0.0,10.0,20.0,1.0);
+    vec4 light_pos = vec4(100,100,100,1.0);
+    vec3 light_color = vec3(0.0588, 0.5608, 0.6804) * 0.9;
+    vec3 light_dir = normalize((light_pos - vert_new_position)).xyz;
+    float diff_coeff = max(dot(vert_normals, light_dir), 0.0);
+    vec3 diffuse = diff_coeff * light_color;
+
+    // Specular lighting (Phong's model)
+    vec3 view_dir = normalize(camera_position.xyz-vert_new_position.xyz);
+    vec3 halfway_dir = normalize(light_dir + view_dir);
+    int shininess = 1000;
+    float spec = pow(max(dot(vert_normals, halfway_dir), 0.0), shininess);
+    vec3 specular_color = vec3(1.0, 1.0, 1.0);
+    vec3 specular = spec * specular_color;
+
+    color = vec4(vert_color.xyz * (diffuse+ambient+specular), 1.0);
+}
+```
+
+In the specular lighing part we calculate the angle between the camera and the vertex position `view_dir`. This value is then used to calculate the halfway direction between the light direction and the view direction. This is the direction along which the "light will be reflected".
+
+As we didn't have any material values for the terrain or the helicopter we just defined a fixed shininess that controls how concentrated the specular reflection is on all surfaces. Higher values lead to intense but condensed reflections.
+
 
 ## Bonus b/c
 

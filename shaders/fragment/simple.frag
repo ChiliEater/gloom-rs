@@ -23,36 +23,43 @@ float getFogFactor(float d)
     return 1-(fog_max_distance - d) / (fog_max_distance - fog_min_distance);
 }
 
-
-
 void main()
 {
-    // Diffuse lighting (lambertian model)
-    
-    // Fixed light source at infinity, not really ambient lighting but adds volume.
-    vec3 ambient_dir = normalize(vec3(-0.8,0.5,0.6));
+    // ambient lighting
     vec3 ambient_color = vec3(0.9216, 0.4431, 0.1451);
-    float ambient_coeff = max(dot(vert_normals, ambient_dir), 0.0);
+    float ambient_coeff = 0.2;
     vec3 ambient = ambient_coeff * ambient_color;
         
-    // Light color and position (rotating Sun)
-    //vec4 light_pos =   500 * vec4(2*cos(elapsed_time), sin(elapsed_time),-1,1.0);
-    vec4 light_pos = heli_position + heli_yaw * vec4(0.0,0.0,-20,1.0);
+    // Lambertian lighting (light in front of the helicopter.)
+    vec4 light_pos = heli_position + heli_yaw * vec4(0.0,10.0,20.0,1.0);
+    //vec4 light_pos = vec4(100,100,100,1.0);
     vec3 light_color = vec3(0.0588, 0.5608, 0.6804) * 0.9;
-    //vec3 light_color = vec3(0.9, 0.9, 0.6);
-
     vec3 light_dir = normalize((light_pos - vert_new_position)).xyz;
     float diff_coeff = max(dot(vert_normals, light_dir), 0.0);
     vec3 diffuse = diff_coeff * light_color;
 
-    // Specular lighting (Phong's model)
+    // Specular lighting (helicopter light)
     vec3 view_dir = normalize(camera_position.xyz-vert_new_position.xyz);
-
     vec3 halfway_dir = normalize(light_dir + view_dir);
-
-    int shininess = 100;
+    int shininess = 1000;
     float spec = pow(max(dot(vert_normals, halfway_dir), 0.0), shininess);
-    vec3 specular = light_color * spec;
+    vec3 specular_color = vec3(1.0, 1.0, 1.0);
+    vec3 specular = spec * specular_color;
+
+    // Lambertian lighting (rotating sun)
+    vec4 sun_pos = 1000 * vec4(3*cos(elapsed_time),sin(elapsed_time),3,1.0);
+    vec3 sun_color = ambient_color;
+    vec3 sun_dir = normalize((sun_pos - vert_new_position)).xyz;
+    float sun_diff_coeff = max(dot(vert_normals, sun_dir), 0.0);
+    vec3 sun_diffuse = sun_diff_coeff * sun_color;
+
+    // Specular lighting (sun light)
+    vec3 sun_halfway_dir = normalize(sun_dir + view_dir);
+    int sun_shininess = 100;
+    float sun_spec = pow(max(dot(vert_normals, sun_halfway_dir), 0.0), sun_shininess);
+    vec3 sun_specular_color = vec3(1.0, 1.0, 1.0);
+    vec3 sun_specular = sun_spec * sun_specular_color;
+
 
     // Implement fog (flat color)
     float dist =  distance(camera_position,vert_new_position);
@@ -60,5 +67,6 @@ void main()
     float fog_density = getFogFactor(dist); 
     vec3 fog = fog_density*fog_color;
 
-    color = vec4(vert_color.xyz * ((1-fog_density)*(diffuse+ambient+specular)+fog), 1.0);
+    color = vec4(vert_color.xyz * ((1-fog_density)*(diffuse+ambient+specular+sun_diffuse+sun_specular)+fog), 1.0);
+
 }
