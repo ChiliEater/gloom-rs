@@ -97,14 +97,34 @@ pub fn rotate_all(angles: &Vec3) -> Mat4x4 {
     let x_axis: Vec3 = vec3(1.0, 0.0, 0.0);
     let y_axis: Vec3 = vec3(0.0, 1.0, 0.0);
     let z_axis: Vec3 = vec3(0.0, 0.0, 1.0);
+
+    let z_rotation: Mat4x4 = glm::rotation(angles.z, &z_axis);
+    let y_rotation: Mat4x4 = glm::rotation(angles.y, &y_axis);
+    let x_rotation: Mat4x4 = glm::rotation(angles.x, &x_axis);
     
-    glm::rotation(angles.x, &x_axis)
-    * glm::rotation(angles.y, &y_axis)
-    * glm::rotation(angles.z, &z_axis)
+
+    z_rotation * y_rotation * x_rotation
+}
+
+pub fn rotate_all_intrinsic(angles: &Vec3) -> Mat4x4 {
+    let x_axis: Vec3 = vec3(1.0, 0.0, 0.0);
+    let y_axis: Vec3 = vec3(0.0, 1.0, 0.0);
+    let z_axis: Vec3 = vec3(0.0, 0.0, 1.0);
+
+    let z_rotation: Mat4x4 = glm::rotation(angles.z, &z_axis);
+    let y_rotation: Mat4x4 = glm::rotation(angles.y, &y_axis);
+    let x_rotation: Mat4x4 = glm::rotation(angles.x, &x_axis);
+    
+
+    x_rotation * y_rotation * z_rotation
 }
 
 pub fn rotate_around(angles: &Vec3, point: &Vec3) -> Mat4x4 {
     glm::translation(&point) * rotate_all(angles) * glm::translation(&(-point))
+}
+
+pub fn rotate_around_intrinsic(angles: &Vec3, point: &Vec3) -> Mat4x4 {
+    glm::translation(&point) * rotate_all_intrinsic(angles) * glm::translation(&(-point))
 }
 
 pub fn scale_around(factors: &Vec3, point: &Vec3) -> Mat4x4 {

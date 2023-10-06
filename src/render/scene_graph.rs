@@ -81,6 +81,12 @@ impl SceneNode {
         * scale_around(&self.scale, &self.reference_point)
     }
 
+    pub fn get_transform_intrinsic(&self) -> Mat4x4 {
+        glm::translation(&self.position)
+        * rotate_around_intrinsic(&self.rotation, &self.reference_point)
+        * scale_around(&self.scale, &self.reference_point)
+    }
+
     #[allow(dead_code)]
     pub fn print(&self) {
         println!(
@@ -113,7 +119,7 @@ use std::ops::{Index, IndexMut};
 
 use glm::Mat4x4;
 
-use crate::toolbox::{rotate_around, scale_around};
+use crate::toolbox::{rotate_around, scale_around, rotate_around_intrinsic};
 
 use super::mesh::Mesh;
 impl Index<usize> for SceneNode {
