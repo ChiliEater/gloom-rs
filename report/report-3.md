@@ -9,7 +9,7 @@ author:
 date: \today # This is a latex command, ignored for HTML output
 lang: en-US
 papersize: a4
-geometry: margin=2cm
+geometry: margin=3cm
 toc: false
 toc-title: "Table of Contents"
 toc-depth: 2
@@ -94,16 +94,6 @@ We constructed a scene graph that contains all the elements of the scene. The st
 
 ![](img/scene_graph.png)
 
-**mermaid code (might not work with pandoc)**
-
-```mermaid
-graph TD;
-    R((ROOT)) --> TERRAIN;
-    R --> H[HELICOPTER];
-    H --> M(main rotor);
-    H --> T(tail rotor);
-    H --> D(door);
-```
 
 The `SceneNode` structure has the following properties:
 
@@ -223,11 +213,16 @@ void main()
 
 ![Here we can see 5 helicopters in the wild.](img/5-helis.png)
 
+\clearpage 
+
 ![The above screenshot shows a hover of helicopters containing 100 individuals!](img/100-helis.png)
+
+\clearpage 
 
 # Bonus Tasks
 
 ## Bonus a
+
 Here we focus on implementing the Phong shading model. It consists of 3 parts :
 
 - ambient lighting (base light level when there is no light source)
@@ -269,6 +264,7 @@ In the specular lighing part we calculate the angle between the camera and the v
 
 As we didn't have any material values for the terrain or the helicopter we just defined a fixed shininess that controls how concentrated the specular reflection is on all surfaces. Higher values lead to intense but condensed reflections.
 
+![](img/specular.png)
 
 ## Bonus b/c
 
@@ -286,10 +282,17 @@ To make the helicopter more visually appealing, we changed the animation functio
 
 ## Bonus f
 
+\clearpage 
+
 ![The pilot is a lie?](img/easter-egg.png)
+
 
 ## Bonus g
 
 We implemented really simple fog in the fragment shader. We also added some curvature to the surface to make it look at least a little like a small planet. There's no gravity though!
 
 ![](img/the-fog.png)
+
+We also tried out RenderDoc on our application and the results are very interesting. The order of things being drawn match with the order in which we travel the scene tree. It's also generally interesting to see the whole pipeline step by step!
+
+![](img/renderdoc.png)
