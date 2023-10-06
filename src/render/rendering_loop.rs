@@ -187,7 +187,7 @@ impl RenderingLoop {
                 gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
                 // == // Issue the necessary gl:: commands to draw your scene here
                 self.handle_camera(&mut root_node, &camera_offset);
-                let movement = self.controls.handle(delta_time, &-camera_offset);
+                let movement = self.controls.handle(delta_time, &(root_node.get_child(HELICOPTER_INDEX).position));
                 self.draw_scene(
                     &root_node,
                     &(perspective_matrix * movement),
@@ -301,7 +301,7 @@ impl RenderingLoop {
         view_projection_matrix: &Mat4x4,
         transformation_so_far: &Mat4x4,
     ) {
-        let new_matrix = transformation_so_far * node.get_transform();
+        let new_matrix = transformation_so_far * node.get_transform_intrinsic();
 
         if node.index_count > 0 && node.node_type == NodeType::Mesh {
             gl::BindVertexArray(node.vao_id);

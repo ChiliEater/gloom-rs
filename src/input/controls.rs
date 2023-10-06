@@ -9,7 +9,7 @@ use glutin::event::{
 };
 use nalgebra_glm::{pi, vec3, Mat3x3, Mat4x4, Vec3, Vec4, two_pi};
 
-use crate::render::window_locks::WindowLocks;
+use crate::{render::window_locks::WindowLocks, toolbox::rotate_around_intrinsic};
 use crate::toolbox::{rotate_all, rotate_around, scale_around, to_homogeneous};
 
 const X_SENSITIVITY: f32 = 60.0;
@@ -55,9 +55,9 @@ impl Controls {
 
     pub fn handle(&mut self, delta_time: f32, pivot: &Vec3) -> Mat4x4 {
         //let translation = self.handle_keyboard(delta_time, &negative_rotation);
-        let translation = glm::translation(&(self.position * -1.0));
-        let rotation: Mat4x4 = rotate_around(&self.rotation, &pivot);
-        rotation * translation
+        let translation = glm::translation(&-self.position);
+        let rotation: Mat4x4 = rotate_around(&self.rotation, pivot);
+        translation * rotation
     }
 
     pub fn handle_mouse(&mut self, delta_time: f32, pivot: &Vec3) -> Mat4x4 {
