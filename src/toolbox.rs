@@ -70,15 +70,15 @@ pub fn movement_animation(
     let relative_speed: Vec2 = (relative_rotation * vec2(speed.x,speed.z)).xy();
     let roll: f32 = -clamp(relative_speed.x / MAX_SPEED * MAX_ANGLE, -MAX_ANGLE, MAX_ANGLE);
     let pitch: f32 = clamp(relative_speed.y / MAX_SPEED * MAX_ANGLE, -MAX_ANGLE, MAX_ANGLE);
-    println!("Speed : \n{}",relative_speed);
-    println!("roll/pitch : \n{}\n{}",roll,pitch);
+    println!("[Speed  |  Roll/Pitch] \n{:.3}",mat2(relative_speed.x,roll,relative_speed.y,pitch));
+    
     
     
     // THIS WORKS
     let error: f32 = get_angular_error(heli_rotation.y, camera_rotation.y);
     let yaw: f32 = (heli_rotation.y - 0.05 * error) % two_pi::<f32>();
 
-    let top_rotor: f32 = BASE_ROTATION + 0.5 * glm::magnitude(speed) * ROTATION_RATE;
+    let top_rotor: f32 = BASE_ROTATION + glm::magnitude(speed) * ROTATION_RATE * 0.5;
     let rear_rotor: f32 = BASE_ROTATION + (yaw - heli_rotation.y) * ROTATION_RATE * 4.0;
 
     Heading {
@@ -130,7 +130,7 @@ fn get_angular_error(angle1: f32, angle2: f32) -> f32 {
         diff
     };
 
-    // Ensure the result is within the -π to π range
+    // Ensure the result is within the -pi to pi range
     if error > pi::<f32>() {
         error -= two_pi::<f32>();
     } else if error < -pi::<f32>() {
