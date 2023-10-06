@@ -89,8 +89,8 @@ We end up with the following result:
 
 ![Smooth shading on the moon.](img/moon_shading.png)
 
-# Task 2
-We constructed a scene graph that contains all the elements of the scene.The structure is shown in the figure below:
+# Task 2c
+We constructed a scene graph that contains all the elements of the scene. The structure is shown in the figure below:
 
 ![](img/scene_graph.png)
 
@@ -118,21 +118,20 @@ The `SceneNode` structure has the following properties:
 We can now recursively iterate over all nodes to get their transformations relative to their parents and draw the elements in the scene using the following function.
 
 ```rust
-unsafe fn draw_scene(
-        &self,
+    unsafe fn draw_scene(
+        &mut self,
         node: &SceneNode,
         view_projection_matrix: &Mat4x4,
         transformation_so_far: &Mat4x4,
     ) {
-        let new_matrix = transformation_so_far
-            * rotate_around(&node.rotation, &node.reference_point)
-            * scale_around(&node.scale, &node.reference_point)
-            * glm::translation(&node.position);
-
-        if node.index_count > 0 {
+        // Determine the transformation matrix from the current state
+        let new_matrix: Mat4x4 = transformation_so_far * node.get_transform_intrinsic();
+        // Only draw if we have faces
+        if node.index_count > 0 && node.node_type == NodeType::Mesh {
             gl::BindVertexArray(node.vao_id);
             match &self.shader {
                 Some(shader) => {
+                    // Pass matrices to our shaders
                     let transform_uniform = shader.get_uniform_location("transform");
                     gl::UniformMatrix4fv(transform_uniform, 1, gl::FALSE, new_matrix.as_ptr());
                     let view_uniform = shader.get_uniform_location("view_projection");
@@ -145,7 +144,7 @@ unsafe fn draw_scene(
                 }
                 None => {}
             }
-
+            // Draw
             gl::DrawElements(
                 gl::TRIANGLES,
                 node.index_count,
@@ -153,33 +152,81 @@ unsafe fn draw_scene(
                 ptr::null(),
             );
         }
-
+        // Recursive call
         for &child in &node.children {
             self.draw_scene(&*child, view_projection_matrix, &new_matrix);
         }
     }
 ```
 
-The idea is that we compute the transformation matrix that has to be applied to the node ($\mathrm{rotate}\times\mathrm{scale}\times\mathrm{translate}$)
-
-*TO BE CONTINUED*
-
 We get the following scene
 
 ![](img/helicopter_scene.png)
 
-# Task 4
-
-![](img/heli-good.png)
-
-![](img/heli-wrong.png)
-
 # Task 5
 
-![](img/5-helis.png)
+## Task 5a
 
-![](img/100-helis.png)
+There is something wrong about the lighting when the helicopter rotates around as shown in the images below
+
+![Helicopter without rotation has correct lighting](img/heli-good.png)
+
+![If the helicopter is rotated, the lighting is wrong.](img/heli-wrong.png)
+
+## Task 5c
+
+We split the transform matrix into 2 parts that are passed as uniforms to the vertex shader:
+
+- View projection matrix that transforms the vertex positions.
+- Model matrix that is used to transform the vertex normals.
+
+```glsl
+in vec4 position;               // The vertex positions
+uniform mat4 transform;         // Normals transformation matrix
+uniform mat4 view_projection;   // View projection matrix
+
+out vert_normals                // The updated normals
+void main(){
+        vert_normals = normalize(mat3(transform) * normals);
+        gl_Position =  view_projection * transform * position;  
+}
+```
+This allows us to use the corrected `vert_normals` in the fragment shader to fix the lighting.
+
+![](img/heli-lighting-1-final.png)
+
+![](img/heli-lighting-2.png)
 
 # Task 6
 
-![](img/londong.png)
+![Here we can see 5 helicopters in the wild.](img/5-helis.png)
+
+![The above screenshot shows a hover of helicopters containing 100 individuals!](img/100-helis.png)
+
+# Bonus Tasks
+
+## Bonus a
+
+## Bonus b/c
+
+Making the helicopter controllable was suprisingly simple. We just have to apply the movement that's calculated for the camera to the helicopter instead. The scene graph takes care of the rest.
+
+Making it nice was *significantly* more difficult, though. Instead of just adding a fixed value, we replaced the movement system with rudimentary momentum based one. Pressing keys simply accelerates the speed vector which is then passed into another function, along with some other info, to produce the helicopter's next position. We also made the camera rotate around the helicopter. When no keys are pressed, the helicopter decelerates until it reaches a standstill.
+
+## Bonus d
+
+We didn't do this one.
+
+## Bonus e
+
+To make the helicopter more visually appealing, we changed the animation function to also output pitch, yaw, roll. This is where we finally ran into issues with extrinsic angles. This lead us to ~~a lot of frustration~~ refactor a few parts of the code. In the end, we ended up with a setup that works with camera, movement, and animations.
+
+## Bonus f
+
+![The pilot is a lie?](img/easter-egg.png)
+
+## Bonus g
+
+We implemented really simple fog in the fragment shader. We also added some curvature to the surface to make it look at least a little like a small planet. There's no gravity though!
+
+![](img/the-fog.png)

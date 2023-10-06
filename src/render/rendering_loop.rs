@@ -307,13 +307,15 @@ impl RenderingLoop {
         view_projection_matrix: &Mat4x4,
         transformation_so_far: &Mat4x4,
     ) {
-        // Determine 
-        let new_matrix = transformation_so_far * node.get_transform_intrinsic();
+        // Determine the transformation matrix from the current state
+        let new_matrix: Mat4x4 = transformation_so_far * node.get_transform_intrinsic();
 
+        // Only draw if we have faces
         if node.index_count > 0 && node.node_type == NodeType::Mesh {
             gl::BindVertexArray(node.vao_id);
             match &self.shader {
                 Some(shader) => {
+                    // Pass matrices to our shaders
                     let transform_uniform = shader.get_uniform_location("transform");
                     gl::UniformMatrix4fv(transform_uniform, 1, gl::FALSE, new_matrix.as_ptr());
                     let view_uniform = shader.get_uniform_location("view_projection");
@@ -327,6 +329,7 @@ impl RenderingLoop {
                 None => {}
             }
 
+            // Draw
             gl::DrawElements(
                 gl::TRIANGLES,
                 node.index_count,
@@ -334,6 +337,7 @@ impl RenderingLoop {
                 ptr::null(),
             );
         }
+        // Recursive call
         for &child in &node.children {
             self.draw_scene(&*child, view_projection_matrix, &new_matrix);
         }

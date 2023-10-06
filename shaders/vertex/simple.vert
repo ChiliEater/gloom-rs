@@ -18,14 +18,11 @@ uniform mat4 view_projection;
 uniform vec4 camera_position;
 
 
-void main()
-{       
-        vec4 new_position = view_projection * transform * position;
-        
+void main(){
         vert_color = color;
         vert_normals = normalize(mat3(transform) * normals);
         vert_position = position;
         vert_new_position = transform * position;
-        gl_Position =  new_position;
+        gl_Position =  view_projection * transform * position;
         
 }
